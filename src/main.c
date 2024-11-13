@@ -14,6 +14,11 @@ int main(int argc, char *argv[]) {
     // debug
     printArgsStruct();
 
+    // parse .p files when --p or --s flags are set
+    if((args -> parse == 1 || args -> simplify == 1) && isEqual(args -> extension, P) == 1) {
+        runCvc5Parser();
+    }
+
     // cleanup
     free(args);
     return 0;

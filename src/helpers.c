@@ -1,8 +1,20 @@
 #include "../include/helpers.h"
 
+void setExecPermissions(char *path) {
+    /*
+    S_IXUSR: User
+    S_IXGRP: Group
+    S_IXOTH: Others
+    */
+    if (chmod(path, S_IXUSR | S_IXGRP | S_IXOTH) != 0) {
+        errNdie("Could not set execution permissions");
+    }
+}
+
 void printArgsStruct() {
 
     printf("FILE: %s\n", args -> file);
+    printf("FILE NAME: %s\n", args -> fileName);
     printf("EXTENSION: %s\n", args -> extension);
     printf("PARSE: %i\n", args -> parse);
     printf("SIMPLIFY: %i\n", args -> simplify);

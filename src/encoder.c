@@ -1,5 +1,25 @@
 #include "../include/encoder.h"
 
+void runCvc5Parser() {
+
+    char command[4*BUFFER_SIZE];
+
+    setExecPermissions(args -> parserPath);
+    
+    snprintf(
+            command, 
+            sizeof(command),
+            "%s -o raw-benchmark --parse-only --output-lang=smt2 %s > %s.smt2",
+            args -> parserPath,
+            args -> file,
+            args -> fileName
+            );
+    
+    if (system(command) == -1) {
+        errNdie("Could not execute the cvc5 parser command");
+    }
+}
+
 void extractCommandLineArgs(int argc, char *argv[]) {
 
     int opt;
@@ -29,9 +49,13 @@ void extractCommandLineArgs(int argc, char *argv[]) {
                         if(isEqual(extension, validExtensions[i])) {
                             fflag = 1;
 
-                            // store file name
+                            // store file
                             strncpy(args -> file, optarg, BUFFER_SIZE - 1);
                             args -> file[BUFFER_SIZE - 1] = '\0';
+
+                            // store file name
+                            strncpy(args -> fileName, removeFileExtension(optarg), BUFFER_SIZE - 1);
+                            args -> fileName[BUFFER_SIZE - 1] = '\0';
 
                             // store file extension
                             strncpy(args -> extension, extension, BUFFER_SIZE - 1);

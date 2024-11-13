@@ -16,6 +16,7 @@
 
 struct args {
     char file[BUFFER_SIZE];
+    char fileName[BUFFER_SIZE];
     char extension[BUFFER_SIZE];
     bool parse;
     bool simplify;
@@ -23,6 +24,7 @@ struct args {
     char cvc5Path[BUFFER_SIZE];
 };
 
+void setExecPermissions(char *path);
 void printArgsStruct();
 char* stringCopy(char *src);
 bool isEqual(char *str1, char *str2);
