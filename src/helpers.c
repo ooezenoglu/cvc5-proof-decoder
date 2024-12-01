@@ -18,8 +18,10 @@ void printArgsStruct() {
     printf("EXTENSION: %s\n", args -> extension);
     printf("PARSE: %i\n", args -> parse);
     printf("SIMPLIFY: %i\n", args -> simplify);
+    printf("DECODE: %i\n", args -> decode);
     printf("PARSER PATH: %s\n", args -> parserPath);
     printf("CVC5 PATH: %s\n", args -> cvc5Path);
+    printf("PROOF FILE: %s\n", args -> proofFile);
 }
 
 char* stringCopy(char *src) {

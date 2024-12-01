@@ -20,8 +20,10 @@ struct args {
     char extension[BUFFER_SIZE];
     bool parse;
     bool simplify;
+    bool decode;
     char parserPath[BUFFER_SIZE];
     char cvc5Path[BUFFER_SIZE];
+    char proofFile[BUFFER_SIZE];
 };
 
 void setExecPermissions(char *path);

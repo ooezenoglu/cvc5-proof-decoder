@@ -27,10 +27,11 @@ void extractCommandLineArgs(int argc, char *argv[]) {
     int pflag = 0;
     int sflag = 0;
     int cflag = 0;
+   // int dflag = 0;
     char *extension;
     char *validExtensions[NUM_EXTENSIONS] = {P, SMT2};
 
-    while((opt = getopt(argc, argv, ":f:psc:")) != -1) {
+    while((opt = getopt(argc, argv, ":f:psdc:")) != -1) {
 
         switch(opt) {
 
@@ -92,6 +93,12 @@ void extractCommandLineArgs(int argc, char *argv[]) {
 
                     break;
                 }
+            
+            // decode option
+            case 'd':
+                args -> decode = 1;
+              //  dflag = 1;
+                break;
         }
     }
 
