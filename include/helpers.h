@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <regex.h>
 
 #define BUFFER_SIZE 256
 #define SMT2 "smt2"

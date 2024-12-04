@@ -1,59 +1,86 @@
 #include "../include/decoder.h"
 
-char* simplifyNotExists(char* str) {
+void replaceAll(char* str, char* pattern, char* replacement) {
 
-    char* res = str;
+    regex_t regex;
+    // matches exactly two groups, where matches[0] is the whole match
+    regmatch_t matches[3];
+    char buffer[2 * BUFFER_SIZE];
+    char* cursor = str;
 
-    // replace "not exists" with "forall not"
-    while ((res = strstr(res, NOTEXISTS)) != NULL) {
-
-        int remainderLen = strlen(res + strlen(NOTEXISTS));
-
-        // shift the remainder to the right to make room for the replacement
-        memmove(res + strlen(FORALLNOT), res + strlen(NOTEXISTS), remainderLen + 1);
-
-        // copy the replacement string into place
-        memcpy(res, FORALLNOT, strlen(FORALLNOT));
-
-        // move the pointer to after the replacement
-        res += strlen(FORALLNOT);
+    // compile regex
+    if (regcomp(&regex, pattern, REG_EXTENDED | REG_ICASE) != 0) {
+        errNdie("Regex compilation failed");
     }
 
-    return str;
+    buffer[0] = '\0';
+
+    while (regexec(&regex, cursor, 3, matches, 0) == 0) {
+
+        // copy string before the match
+        strncat(buffer, cursor, matches[0].rm_so);
+
+        // process the replacement pattern
+        char* rCursor = replacement;
+
+        while (*rCursor != '\0') {
+
+            // for binary operations, replace \1 or \2 with respective group content
+            if (*rCursor == '\\' && (*(rCursor + 1) == '1' || *(rCursor + 1) == '2')) {
+                // extract the group number
+                int groupIndex = *(rCursor + 1) - '0';
+                // calculate length of the group content
+                int length = matches[groupIndex].rm_eo - matches[groupIndex].rm_so;
+                // add group content
+                strncat(buffer, cursor + matches[groupIndex].rm_so, length);
+                rCursor += 2; // skip escape char + digit
+
+            } else {
+                // copy every other character
+                strncat(buffer, rCursor, 1);
+                rCursor++;
+            }
+        }
+
+        // move cursor to behind the match
+        cursor += matches[0].rm_eo;
+    }
+
+    // copy rest of the string
+    strcat(buffer, cursor);
+
+    // modify original string
+    strncpy(str, buffer, BUFFER_SIZE - 1);
+
+    // safety measure
+    str[BUFFER_SIZE - 1] = '\0'; 
+
+    // cleanup
+    regfree(&regex);
 }
 
-char* simplifyNotForall(char* str) {
-
-    char* res = str;
-
-    // replace "not forall" with "exists not"
-    while ((res = strstr(res, NOTFORALL)) != NULL) {
-
-        int remainderLen = strlen(res + strlen(NOTFORALL));
-
-        // shift the remainder to the right to make room for the replacement
-        memmove(res + strlen(EXISTSNOT), res + strlen(NOTFORALL), remainderLen + 1);
-
-        // copy the replacement string into place
-        memcpy(res, EXISTSNOT, strlen(EXISTSNOT));
-
-        // move the pointer to after the replacement
-        res += strlen(EXISTSNOT);
-    }
-
-    return str;
+void simplifyImplication(char* str) {
+    replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not \\1 \\2)");
 }
 
-char* simplifyDoubleNeg(char* str) {
+void simplifyNotExists(char* str) {
+    replaceAll(str, NOTEXISTS, FORALLNOT);
+}
 
-    char* res = str;
+void simplifyNotForall(char* str) {
+    replaceAll(str, NOTFORALL, EXISTSNOT);
+}
 
-    while ((res = strstr(res, NOTNOT)) != NULL) {
+void simplifyDoubleNeg(char* str) {
+    replaceAll(str, NOTNOT, "");
+}
 
-        // itertively delete all double negations in the string and copy the rest
-        memmove(res, res + strlen(NOTNOT) + 1, strlen(res + strlen(NOTNOT) + 1) + 1);
-    }
-    return str;
+void simplifyNotFalse(char* str) {
+    replaceAll(str, NOTFALSE, TRUE);
+}
+
+void simplifyNotTrue(char* str) {
+    replaceAll(str, NOTTRUE, FALSE);
 }
 
 void preparse() {
@@ -88,13 +115,16 @@ void preparse() {
                 line[len - 1] = '\0';
             }
 
+            simplifyImplication(line);
+            simplifyNotTrue(line);
+            simplifyNotFalse(line);
             simplifyDoubleNeg(line);
             simplifyNotForall(line);
             simplifyNotExists(line);
 
             fprintf(preparsedProof, "PARSED: %s\n", line);
     }
-        
+    
     fclose(proof);
     fclose(preparsedProof);
 }
