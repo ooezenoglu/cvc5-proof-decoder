@@ -59,6 +59,20 @@ void replaceAll(char* str, char* pattern, char* replacement) {
     regfree(&regex);
 }
 
+void applyDeMorgansLaw(char* str) {
+    // ~(and(A B)) <=> or(~A B)
+    replaceAll(str, "not\\(and\\(\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)\\)\\)", "or(not \\1 not \\2)");
+
+    // ~(or(A B)) <=> and(~A B)
+    replaceAll(str, "not\\(or\\(\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)\\)\\)", "and(not \\1 not \\2)");
+
+    // ~(and(~A ~B)) <=> or(A B)
+    replaceAll(str, "not\\(and\\(\\s*not\\s*([A-Za-z0-9_@]+)\\s+not\\s*([A-Za-z0-9_@]+)\\)\\)", "or(\\1 \\2)");
+
+    // ~(or(~A ~B)) <=> and(A B)
+    replaceAll(str, "not\\(or\\(\\s*not\\s*([A-Za-z0-9_@]+)\\s+not\\s*([A-Za-z0-9_@]+)\\)\\)", "and(\\1 \\2)");
+}
+
 void simplifyImplication(char* str) {
     replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not \\1 \\2)");
 }
@@ -121,6 +135,7 @@ void preparse() {
             simplifyDoubleNeg(line);
             simplifyNotForall(line);
             simplifyNotExists(line);
+            applyDeMorgansLaw(line);
 
             fprintf(preparsedProof, "PARSED: %s\n", line);
     }

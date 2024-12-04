@@ -15,6 +15,8 @@
 #define IMPL "=>"
 
 void replaceAll(char* str, char* pattern, char* replacement);
+void applyDeMorgansLaw(char* str);
+void simplifyImplication(char* str);
 void simplifyNotExists(char* str);
 void simplifyNotForall(char* str);
 void simplifyDoubleNeg(char* str);
