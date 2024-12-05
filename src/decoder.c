@@ -1,12 +1,13 @@
 #include "../include/decoder.h"
 
-void replaceAll(char* str, char* pattern, char* replacement) {
+bool replaceAll(char* str, char* pattern, char* replacement) {
 
     regex_t regex;
     // matches exactly two groups, where matches[0] is the whole match
     regmatch_t matches[3];
     char buffer[2 * BUFFER_SIZE];
     char* cursor = str;
+    bool matched = false;
 
     // compile regex
     if (regcomp(&regex, pattern, REG_EXTENDED | REG_ICASE) != 0) {
@@ -16,6 +17,8 @@ void replaceAll(char* str, char* pattern, char* replacement) {
     buffer[0] = '\0';
 
     while (regexec(&regex, cursor, 3, matches, 0) == 0) {
+
+        matched = true;
 
         // copy string before the match
         strncat(buffer, cursor, matches[0].rm_so);
@@ -57,44 +60,44 @@ void replaceAll(char* str, char* pattern, char* replacement) {
 
     // cleanup
     regfree(&regex);
+
+    return matched;
 }
 
-void applyDeMorgansLaw(char* str) {
-    // ~(and(A B)) <=> or(~A B)
-    replaceAll(str, "not\\(and\\(\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)\\)\\)", "or(not \\1 not \\2)");
+bool applyDeMorgansLaw(char* str) {
+    bool replaced = false;
 
-    // ~(or(A B)) <=> and(~A B)
-    replaceAll(str, "not\\(or\\(\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)\\)\\)", "and(not \\1 not \\2)");
+    // not(and(...))
+    replaced |= replaceAll(str, "not\\(and\\(([^)]+)\\s+([^)]+)\\)\\)", "or(not \\1 not \\2)");
 
-    // ~(and(~A ~B)) <=> or(A B)
-    replaceAll(str, "not\\(and\\(\\s*not\\s*([A-Za-z0-9_@]+)\\s+not\\s*([A-Za-z0-9_@]+)\\)\\)", "or(\\1 \\2)");
+    // not(or(...))
+    replaced |= replaceAll(str, "not\\(or\\(([^)]+)\\s+([^)]+)\\)\\)", "and(not \\1 not \\2)");
 
-    // ~(or(~A ~B)) <=> and(A B)
-    replaceAll(str, "not\\(or\\(\\s*not\\s*([A-Za-z0-9_@]+)\\s+not\\s*([A-Za-z0-9_@]+)\\)\\)", "and(\\1 \\2)");
+    return replaced;
 }
 
-void simplifyImplication(char* str) {
-    replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not \\1 \\2)");
+bool simplifyImplication(char* str) {
+    return replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not \\1 \\2)");
 }
 
-void simplifyNotExists(char* str) {
-    replaceAll(str, NOTEXISTS, FORALLNOT);
+bool simplifyNotExists(char* str) {
+    return replaceAll(str, NOTEXISTS, FORALLNOT);
 }
 
-void simplifyNotForall(char* str) {
-    replaceAll(str, NOTFORALL, EXISTSNOT);
+bool simplifyNotForall(char* str) {
+    return replaceAll(str, NOTFORALL, EXISTSNOT);
 }
 
-void simplifyDoubleNeg(char* str) {
-    replaceAll(str, NOTNOT, "");
+bool simplifyDoubleNeg(char* str) {
+    return replaceAll(str, NOTNOT, "");
 }
 
-void simplifyNotFalse(char* str) {
-    replaceAll(str, NOTFALSE, TRUE);
+bool simplifyNotFalse(char* str) {
+    return replaceAll(str, NOTFALSE, TRUE);
 }
 
-void simplifyNotTrue(char* str) {
-    replaceAll(str, NOTTRUE, FALSE);
+bool simplifyNotTrue(char* str) {
+    return replaceAll(str, NOTTRUE, FALSE);
 }
 
 void preparse() {
@@ -102,6 +105,7 @@ void preparse() {
     FILE *proof, *preparsedProof;
     char preparsedProofFileName[2*BUFFER_SIZE];
     char line[2*BUFFER_SIZE];
+    bool simplify;
 
     snprintf(
         preparsedProofFileName, 
@@ -116,28 +120,33 @@ void preparse() {
     if(!proof) { errNdie("Could not open proof file"); }
     if(!preparsedProof) { errNdie("Could not create preparsed proof file"); }
 
-        while(1) {
+    while(1) {
 
-            // read line
-            if(!fgets(line, sizeof(line), proof)) {
-                break; // end of file
-            }
+        // read line
+        if(!fgets(line, sizeof(line), proof)) {
+            break; // end of file
+        }
 
-            // remove line breaks
-            size_t len = strlen(line);
-            if(len > 0 && line[len - 1] == '\n') {
-                line[len - 1] = '\0';
-            }
+        // remove line breaks
+        int len = strlen(line);
+        if(len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
 
-            simplifyImplication(line);
-            simplifyNotTrue(line);
-            simplifyNotFalse(line);
-            simplifyDoubleNeg(line);
-            simplifyNotForall(line);
-            simplifyNotExists(line);
-            applyDeMorgansLaw(line);
+        // the whole proof has to be preparsed again
+        // if at least one simplification took place
+        do {
+            simplify = false;
+            simplify |= simplifyImplication(line);
+            simplify |= simplifyNotTrue(line);
+            simplify |= simplifyNotFalse(line);
+            simplify |= simplifyDoubleNeg(line);
+            simplify |= simplifyNotForall(line);
+            simplify |= simplifyNotExists(line);
+            simplify |= applyDeMorgansLaw(line);
+        } while (simplify);
 
-            fprintf(preparsedProof, "PARSED: %s\n", line);
+        fprintf(preparsedProof, "PARSED: %s\n", line);
     }
     
     fclose(proof);

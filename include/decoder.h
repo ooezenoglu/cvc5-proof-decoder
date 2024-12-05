@@ -14,14 +14,14 @@
 #define FORALLNOT "forall not"
 #define IMPL "=>"
 
-void replaceAll(char* str, char* pattern, char* replacement);
-void applyDeMorgansLaw(char* str);
-void simplifyImplication(char* str);
-void simplifyNotExists(char* str);
-void simplifyNotForall(char* str);
-void simplifyDoubleNeg(char* str);
-void simplifyNotFalse(char* str);
-void simplifyNotTrue(char* str);
+bool replaceAll(char* str, char* pattern, char* replacement);
+bool applyDeMorgansLaw(char* str);
+bool simplifyImplication(char* str);
+bool simplifyNotExists(char* str);
+bool simplifyNotForall(char* str);
+bool simplifyDoubleNeg(char* str);
+bool simplifyNotFalse(char* str);
+bool simplifyNotTrue(char* str);
 void preparse();
 void decode();
 
