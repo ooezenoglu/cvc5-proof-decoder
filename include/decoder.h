@@ -23,6 +23,7 @@ bool simplifyDoubleNeg(char* str);
 bool simplifyNotFalse(char* str);
 bool simplifyNotTrue(char* str);
 void preparse();
+void refactor();
 void decode();
 
 extern struct args *args;

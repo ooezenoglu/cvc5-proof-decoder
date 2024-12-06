@@ -18,13 +18,17 @@
 struct args {
     char file[BUFFER_SIZE];
     char fileName[BUFFER_SIZE];
-    char extension[BUFFER_SIZE];
+    char fileExtension[BUFFER_SIZE];
     bool parse;
     bool simplify;
     bool decode;
     char parserPath[BUFFER_SIZE];
     char cvc5Path[BUFFER_SIZE];
     char proofFile[BUFFER_SIZE];
+    char proofFileName[BUFFER_SIZE];
+    char proofFileExtension[BUFFER_SIZE];
+    char preparsedProofFile[BUFFER_SIZE];
+    char refactoredProofFile[BUFFER_SIZE];
 };
 
 void setExecPermissions(char *path);

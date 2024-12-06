@@ -15,13 +15,17 @@ void printArgsStruct() {
 
     printf("FILE: %s\n", args -> file);
     printf("FILE NAME: %s\n", args -> fileName);
-    printf("EXTENSION: %s\n", args -> extension);
+    printf("FILE EXTENSION: %s\n", args -> fileExtension);
     printf("PARSE: %i\n", args -> parse);
     printf("SIMPLIFY: %i\n", args -> simplify);
     printf("DECODE: %i\n", args -> decode);
     printf("PARSER PATH: %s\n", args -> parserPath);
     printf("CVC5 PATH: %s\n", args -> cvc5Path);
     printf("PROOF FILE: %s\n", args -> proofFile);
+    printf("PROOF FILE NAME: %s\n", args -> proofFileName);
+    printf("PROOF FILE EXTENSION: %s\n", args -> proofFileExtension);
+    printf("PREPARSED PROOF FILE: %s\n", args -> preparsedProofFile);
+    printf("REFACTORED PROOF FILE: %s\n", args -> refactoredProofFile);
 }
 
 char* stringCopy(char *src) {

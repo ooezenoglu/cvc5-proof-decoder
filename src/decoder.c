@@ -111,11 +111,14 @@ void preparse() {
         preparsedProofFileName, 
         sizeof(preparsedProofFileName),
         "%s_preparsed.txt",
-        removeFileExtension(args -> proofFile)
-        );
+        args -> proofFileName
+    );
+
+    strncpy(args -> preparsedProofFile, preparsedProofFileName, BUFFER_SIZE - 1);
+    args -> preparsedProofFile[BUFFER_SIZE - 1] = '\0';
     
     proof = fopen(args -> proofFile, "r+");
-    preparsedProof = fopen(preparsedProofFileName, "w+");
+    preparsedProof = fopen(args -> preparsedProofFile, "w+");
 
     if(!proof) { errNdie("Could not open proof file"); }
     if(!preparsedProof) { errNdie("Could not create preparsed proof file"); }
@@ -153,7 +156,60 @@ void preparse() {
     fclose(preparsedProof);
 }
 
+void refactor() {
+
+    FILE *preparsedProof, *refactoredProof;
+    char refactoredProofFileName[2*BUFFER_SIZE];
+    char line[2*BUFFER_SIZE];
+
+    snprintf(
+        refactoredProofFileName, 
+        sizeof(refactoredProofFileName),
+        "%s_refactored.txt",
+        args -> proofFileName
+    );
+
+    strncpy(args -> refactoredProofFile, refactoredProofFileName, BUFFER_SIZE - 1);
+    args -> refactoredProofFile[BUFFER_SIZE - 1] = '\0';
+    
+    preparsedProof = fopen(args -> preparsedProofFile, "r+");
+    refactoredProof = fopen(args -> refactoredProofFile, "w+");
+
+    if(!preparsedProof) { errNdie("Could not open proof file"); }
+    if(!refactoredProof) { errNdie("Could not create refactored proof file"); }
+
+     while(1) {
+
+        // read line
+        if(!fgets(line, sizeof(line), preparsedProof)) {
+            break; // end of file
+        }
+
+        // remove line breaks
+        int len = strlen(line);
+        if(len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
+
+        // remove tptp residue
+        replaceAll(line, "tptp.", "");
+        
+        // @list -> []
+        replaceAll(line, "@list\\s*([A-Za-z0-9_@]+)", "[\\1]");
+        
+        // add intuitive variable names
+        // TODO generic function
+        replaceAll(line, "\\$\\$[A-Za-z0-9_@]+", "u");
+
+        fprintf(refactoredProof, "REFACTORED: %s\n", line);
+    }
+
+    fclose(preparsedProof);
+    fclose(refactoredProof);
+}
+
 void decode() {
 
     preparse();
+    refactor();
 }
