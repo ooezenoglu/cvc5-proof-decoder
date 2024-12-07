@@ -33,6 +33,7 @@ struct args {
 
 void setExecPermissions(char *path);
 void printArgsStruct();
+bool startsWith(char *str, char *comp);
 char* stringCopy(char *src);
 bool isEqual(char *str1, char *str2);
 char *removeFileExtension(char *file);

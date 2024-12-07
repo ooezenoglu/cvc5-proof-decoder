@@ -1,5 +1,18 @@
 #include "../include/decoder.h"
 
+char* generateTypeVar() {
+    static int i = 0;
+
+    if (i >= TYPEVARS_LENGTH) {
+        errNdie("Not enough type variables");
+    }
+
+    char* type = typeVars[i];
+    i++;
+
+    return type;
+}
+
 bool replaceAll(char* str, char* pattern, char* replacement) {
 
     regex_t regex;
@@ -149,7 +162,7 @@ void preparse() {
             simplify |= applyDeMorgansLaw(line);
         } while (simplify);
 
-        fprintf(preparsedProof, "PARSED: %s\n", line);
+        fprintf(preparsedProof, "%s\n", line);
     }
     
     fclose(proof);
@@ -191,8 +204,14 @@ void refactor() {
             line[len - 1] = '\0';
         }
 
+        // remove all comments
+        if(startsWith(line, ";")) { continue; }
+
         // remove tptp residue
         replaceAll(line, "tptp.", "");
+
+        // remove unnecessary details
+        replaceAll(line, "eo::var", "");
         
         // @list -> []
         replaceAll(line, "@list\\s*([A-Za-z0-9_@]+)", "[\\1]");
@@ -201,7 +220,7 @@ void refactor() {
         // TODO generic function
         replaceAll(line, "\\$\\$[A-Za-z0-9_@]+", "u");
 
-        fprintf(refactoredProof, "REFACTORED: %s\n", line);
+        fprintf(refactoredProof, "%s\n", line);
     }
 
     fclose(preparsedProof);

@@ -14,6 +14,11 @@
 #define FORALLNOT "forall not"
 #define IMPL "=>"
 
+// TODO extend list
+char *typeVars[] = {"u", "m", "n"};
+#define TYPEVARS_LENGTH (sizeof(typeVars) / sizeof(char*))
+
+char* generateTypeVar();
 bool replaceAll(char* str, char* pattern, char* replacement);
 bool applyDeMorgansLaw(char* str);
 bool simplifyImplication(char* str);

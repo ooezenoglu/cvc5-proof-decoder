@@ -28,6 +28,10 @@ void printArgsStruct() {
     printf("REFACTORED PROOF FILE: %s\n", args -> refactoredProofFile);
 }
 
+bool startsWith(char *str, char *comp) {
+    return strncmp(str, comp, strlen(comp)) == 0;
+}
+
 char* stringCopy(char *src) {
 
     char *dest = malloc(strlen(src) + 1);
