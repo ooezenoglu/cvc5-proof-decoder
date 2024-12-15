@@ -15,6 +15,13 @@
 #define P "p"
 #define NUM_EXTENSIONS 2
 
+struct typevar {
+    char original[BUFFER_SIZE];
+    char replacement[BUFFER_SIZE];
+    int arity;
+    struct typevar *next;
+};
+
 struct args {
     char file[BUFFER_SIZE];
     char fileName[BUFFER_SIZE];
@@ -31,6 +38,11 @@ struct args {
     char refactoredProofFile[BUFFER_SIZE];
 };
 
+// linked list functions
+void print_list(struct typevar *head);
+void push(struct typevar *head, char *original, char *replacement, int arity);
+void pop(struct typevar **head);
+
 void setExecPermissions(char *path);
 void printArgsStruct();
 bool startsWith(char *str, char *comp);
@@ -41,5 +53,6 @@ int getIndexOfFileExtension(char *file);
 char *getFileExtension(char *file);
 void errNdie(char *msg);
 
+extern struct typevar *typevars;
 extern struct args *args;
 #endif

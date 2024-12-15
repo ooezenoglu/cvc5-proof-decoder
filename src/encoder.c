@@ -59,8 +59,8 @@ void extractCommandLineArgs(int argc, char *argv[]) {
                             args -> fileName[BUFFER_SIZE - 1] = '\0';
 
                             // store file extension
-                            strncpy(args -> extension, extension, BUFFER_SIZE - 1);
-                            args -> extension[BUFFER_SIZE - 1] = '\0';
+                            strncpy(args -> fileExtension, extension, BUFFER_SIZE - 1);
+                            args -> fileExtension[BUFFER_SIZE - 1] = '\0';
                         }
                     }
 

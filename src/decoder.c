@@ -1,5 +1,9 @@
 #include "../include/decoder.h"
 
+// TODO extend list
+char *typeVariables[] = {"u", "m", "n", "p", "q"};
+#define TYPEVARS_LENGTH (sizeof(typeVariables) / sizeof(char*))
+
 char* generateTypeVar() {
     static int i = 0;
 
@@ -7,7 +11,7 @@ char* generateTypeVar() {
         errNdie("Not enough type variables");
     }
 
-    char* type = typeVars[i];
+    char* type = typeVariables[i];
     i++;
 
     return type;
@@ -215,10 +219,35 @@ void refactor() {
         
         // @list -> []
         replaceAll(line, "@list\\s*([A-Za-z0-9_@]+)", "[\\1]");
+
+        // remove special characters and extra spaces
+        replaceAll(line, "\\$+", "");
+        replaceAll(line, "\\( ", "(");
+        replaceAll(line, " \\)", ")");
+        replaceAll(line, "  ", " ");
         
         // add intuitive variable names
-        // TODO generic function
-        replaceAll(line, "\\$\\$[A-Za-z0-9_@]+", "u");
+        if (startsWith(line, "(declare-type")) {
+       
+            char original[BUFFER_SIZE];
+            char replacement[BUFFER_SIZE];
+
+            // extract original value
+            sscanf(line, "(%*s %s %*[^)]", original);
+
+            // generate a new type variable
+            strncpy(replacement, generateTypeVar(), BUFFER_SIZE - 1);
+            replacement[BUFFER_SIZE - 1] = '\0';
+
+            // add to the list
+            push(typevars, original, replacement, 0);
+        }
+
+        struct typevar *current = typevars;
+        while (current != NULL && current -> original[0] != '\0') {
+            replaceAll(line, current -> original, current->replacement);
+            current = current->next;
+        }
 
         fprintf(refactoredProof, "%s\n", line);
     }
@@ -231,4 +260,7 @@ void decode() {
 
     preparse();
     refactor();
+
+    // debug
+    print_list(typevars);
 }

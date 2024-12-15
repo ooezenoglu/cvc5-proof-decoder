@@ -96,3 +96,61 @@ void errNdie(char *msg) {
     perror(msg);
     exit(EXIT_FAILURE);
 }
+
+void print_list(struct typevar * head) {
+    struct typevar * current = head;
+
+    while (current != NULL) {
+        printf("Original: %s\n", current->original);
+        printf("Replacement: %s\n", current->replacement);
+        printf("Arity: %d\n", current->arity);
+
+        current = current->next;
+    }
+}
+
+void push(struct typevar *head, char *original, char *replacement, int arity) {
+
+    struct typevar *current = head;
+
+    // use the first node if it is still empty
+    if (current->original[0] == '\0' && current->replacement[0] == '\0') {
+        strncpy(current->original, original, BUFFER_SIZE);
+        current->original[BUFFER_SIZE - 1] = '\0';
+
+        strncpy(current->replacement, replacement, BUFFER_SIZE);
+        current->replacement[BUFFER_SIZE - 1] = '\0';
+
+        current->arity = arity;
+        current->next = NULL;
+        return;
+    }
+
+    while (current->next != NULL) {
+        current = current->next;
+    }
+
+    // add a new type variable
+    current->next = (struct typevar *) malloc(sizeof(struct typevar));
+
+    strncpy(current->next->original, original, BUFFER_SIZE);
+    current->next->original[BUFFER_SIZE - 1] = '\0';
+
+    strncpy(current->next->replacement, replacement, BUFFER_SIZE);
+    current->next->replacement[BUFFER_SIZE - 1] = '\0';
+
+    current->next->arity = arity;
+    current->next->next = NULL;
+}
+
+void pop(struct typevar ** head) {
+    struct typevar * next_node = NULL;
+
+    if (*head == NULL) {
+        errNdie("List is empty.");
+    }
+
+    next_node = (*head)->next;
+    free(*head);
+    *head = next_node;
+}
