@@ -27,6 +27,9 @@ void preparse();
 void refactor();
 void decode();
 
-extern struct typevar *typevars;
+extern struct node *typeList;
+extern struct node *varList;
+extern struct type *types;
+extern struct var *vars;
 extern struct args *args;
 #endif

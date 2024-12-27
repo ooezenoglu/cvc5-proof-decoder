@@ -213,9 +213,6 @@ void refactor() {
 
         // remove tptp residue
         replaceAll(line, "tptp.", "");
-
-        // remove unnecessary details
-        replaceAll(line, "eo::var", "");
         
         // @list -> []
         replaceAll(line, "@list\\s*([A-Za-z0-9_@]+)", "[\\1]");
@@ -225,10 +222,12 @@ void refactor() {
         replaceAll(line, "\\( ", "(");
         replaceAll(line, " \\)", ")");
         replaceAll(line, "  ", " ");
-        
-        // add intuitive variable names
+    
+        // extract and refactor type
         if (startsWith(line, "(declare-type")) {
-       
+
+            // TODO: Bool -> b; Int -> i
+
             char original[BUFFER_SIZE];
             char replacement[BUFFER_SIZE];
 
@@ -239,14 +238,49 @@ void refactor() {
             strncpy(replacement, generateTypeVar(), BUFFER_SIZE - 1);
             replacement[BUFFER_SIZE - 1] = '\0';
 
-            // add to the list
-            push(typevars, original, replacement, 0);
+            // add to the types list
+            struct type newType;
+            strncpy(newType.original, original, BUFFER_SIZE - 1);
+            newType.original[BUFFER_SIZE - 1] = '\0';
+
+            strncpy(newType.replacement, replacement, BUFFER_SIZE - 1);
+            newType.replacement[BUFFER_SIZE - 1] = '\0';
+
+            newType.arity = 0; // TODO extract arity
+
+            push(&typeList, &newType, sizeof(struct type));
         }
 
-        struct typevar *current = typevars;
-        while (current != NULL && current -> original[0] != '\0') {
-            replaceAll(line, current -> original, current->replacement);
-            current = current->next;
+        // itertively add more intuitive type names
+        struct node *current = typeList;
+        while (current != NULL) {
+            struct type *type_data = (struct type *) current -> structure;
+            if (type_data -> original[0] != '\0') {
+                replaceAll(line, type_data -> original, type_data -> replacement);
+            }
+            current = current -> next;
+        }
+
+        // extract variable name + type
+        if (contains(line, "eo::var")) {
+            
+            char name[BUFFER_SIZE];
+            char type[BUFFER_SIZE];
+
+            // extract name and type
+            sscanf(line, "%*[^'\"]\"%255[^\"]\" %255[^)]", name, type);
+
+            // add to the list
+            struct var new_var;
+            strncpy(new_var.name, name, BUFFER_SIZE - 1);
+            new_var.name[BUFFER_SIZE - 1] = '\0';
+
+            strncpy(new_var.type, type, BUFFER_SIZE - 1);
+            new_var.type[BUFFER_SIZE - 1] = '\0';
+
+            push(&varList, &new_var, sizeof(struct var));
+            
+            replaceAll(line,  "\\(eo::var [^)]*\\)", new_var.name);
         }
 
         fprintf(refactoredProof, "%s\n", line);
@@ -262,5 +296,10 @@ void decode() {
     refactor();
 
     // debug
-    print_list(typevars);
+    printf("++++ Type List ++++\n");
+    printTypeList(typeList);
+    printf("+++++++++++++++++++\n");
+    printf("++++ Variable List ++++\n");
+    printVarList(varList);
+    printf("+++++++++++++++++++++++\n");
 }

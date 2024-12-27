@@ -15,11 +15,22 @@
 #define P "p"
 #define NUM_EXTENSIONS 2
 
-struct typevar {
+struct node {
+    void* structure;
+    struct node *next;
+};
+
+struct var {
+    char name[BUFFER_SIZE];
+    char type[BUFFER_SIZE];
+    struct var *next;
+};
+
+struct type {
     char original[BUFFER_SIZE];
     char replacement[BUFFER_SIZE];
     int arity;
-    struct typevar *next;
+    struct type *next;
 };
 
 struct args {
@@ -39,10 +50,12 @@ struct args {
 };
 
 // linked list functions
-void print_list(struct typevar *head);
-void push(struct typevar *head, char *original, char *replacement, int arity);
-void pop(struct typevar **head);
+void printVarList(struct node *head);
+void printTypeList(struct node *head);
+struct node* addNode(void* structure, int size);
+void push(struct node** head, void* structure, int size);
 
+bool contains(const char *str, const char *substr);
 void setExecPermissions(char *path);
 void printArgsStruct();
 bool startsWith(char *str, char *comp);
@@ -53,6 +66,9 @@ int getIndexOfFileExtension(char *file);
 char *getFileExtension(char *file);
 void errNdie(char *msg);
 
-extern struct typevar *typevars;
+extern struct node *typeList;
+extern struct node *varList;
+extern struct type *types;
+extern struct var *vars;
 extern struct args *args;
 #endif

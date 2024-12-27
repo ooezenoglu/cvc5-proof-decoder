@@ -1,5 +1,20 @@
 #include "../include/helpers.h"
 
+bool contains(const char *str, const char *substr) {
+    
+    // check whether input strings are valid
+    if (str == NULL || substr == NULL) {
+        return false;
+    }
+
+    // check whether pointer to first occurence exists
+    if (strstr(str, substr) != NULL) {
+        return true;
+    }
+
+    return false;
+}
+
 void setExecPermissions(char *path) {
     /*
     S_IXUSR: User
@@ -97,60 +112,77 @@ void errNdie(char *msg) {
     exit(EXIT_FAILURE);
 }
 
-void print_list(struct typevar * head) {
-    struct typevar * current = head;
+void printVarList(struct node *head) {
 
-    while (current != NULL) {
-        printf("Original: %s\n", current->original);
-        printf("Replacement: %s\n", current->replacement);
-        printf("Arity: %d\n", current->arity);
-
-        current = current->next;
-    }
-}
-
-void push(struct typevar *head, char *original, char *replacement, int arity) {
-
-    struct typevar *current = head;
-
-    // use the first node if it is still empty
-    if (current->original[0] == '\0' && current->replacement[0] == '\0') {
-        strncpy(current->original, original, BUFFER_SIZE);
-        current->original[BUFFER_SIZE - 1] = '\0';
-
-        strncpy(current->replacement, replacement, BUFFER_SIZE);
-        current->replacement[BUFFER_SIZE - 1] = '\0';
-
-        current->arity = arity;
-        current->next = NULL;
+    if (head == NULL) {
+        printf("Empty list.\n");
         return;
     }
 
-    while (current->next != NULL) {
-        current = current->next;
+    struct node *current = head;
+
+    while (current != NULL) {
+        struct var *var = (struct var *) current -> structure;
+        if (var != NULL) {
+            printf("Name: %s\n", var -> name);
+            printf("Type: %s\n", var -> type);
+        } else {
+            errNdie("Invalid data in structure");
+        }
+        current = current -> next;
     }
-
-    // add a new type variable
-    current->next = (struct typevar *) malloc(sizeof(struct typevar));
-
-    strncpy(current->next->original, original, BUFFER_SIZE);
-    current->next->original[BUFFER_SIZE - 1] = '\0';
-
-    strncpy(current->next->replacement, replacement, BUFFER_SIZE);
-    current->next->replacement[BUFFER_SIZE - 1] = '\0';
-
-    current->next->arity = arity;
-    current->next->next = NULL;
 }
 
-void pop(struct typevar ** head) {
-    struct typevar * next_node = NULL;
+void printTypeList(struct node *head) {
 
-    if (*head == NULL) {
-        errNdie("List is empty.");
+    if (head == NULL) {
+        printf("Empty list.\n");
+        return;
     }
 
-    next_node = (*head)->next;
-    free(*head);
-    *head = next_node;
+    struct node *current = head;
+
+    while (current != NULL) {
+        struct type *type = (struct type *) current -> structure;
+        if (type != NULL) {
+            printf("Original: %s\n", type -> original);
+            printf("Replacement: %s\n", type -> replacement);
+            printf("Arity: %d\n", type -> arity);
+        } else {
+            errNdie("Invalid data in structure");
+        }
+        current = current -> next;
+    }
+}
+
+struct node* addNode(void* structure, int size) {
+
+    // allocate memory for new node
+    struct node* newNode = (struct node*) malloc(sizeof(struct node));
+    
+    // allocate memory for the specific structure
+    newNode -> structure = malloc(size);
+
+    // copy data into the new node
+    memcpy(newNode -> structure, structure, size);
+    newNode -> next = NULL;
+    return newNode;
+}
+
+void push(struct node** head, void* structure, int size) {
+    struct node* current = *head;
+
+    // create new list when list is empty
+    if (current == NULL) {
+        *head = addNode(structure, size);
+        return;
+    }
+
+    // iterate to the end of the list
+    while (current -> next != NULL) {
+        current = current -> next;
+    }
+
+    // add new node to end of list
+    current -> next = addNode(structure, size);
 }

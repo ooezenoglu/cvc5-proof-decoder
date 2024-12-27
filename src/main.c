@@ -2,7 +2,10 @@
 #include "../include/encoder.h"
 #include "../include/decoder.h"
 
-struct typevar *typevars;
+struct node *typeList;
+struct node *varList;
+struct type *types;
+struct var *vars;
 struct args *args;
 
 int main(int argc, char *argv[]) {
@@ -10,11 +13,6 @@ int main(int argc, char *argv[]) {
     // struct to store input arguments
     args = malloc(sizeof(struct args));
     memset(args, 0, sizeof(struct args));
-
-    // struct to store type variables
-    typevars = malloc(sizeof(struct typevar));
-    memset(typevars, 0, sizeof(struct typevar));
-    typevars->next = NULL;
 
     extractCommandLineArgs(argc, argv);
 
