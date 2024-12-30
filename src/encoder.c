@@ -40,11 +40,11 @@ void extractCommandLineArgs(int argc, char *argv[]) {
     int fflag = 0;
     int pflag = 0;
     int sflag = 0;
+    int rflag = 0;
     int cflag = 0;
-   // int dflag = 0;
     char *extension;
 
-    while((opt = getopt(argc, argv, ":f:psdc:")) != -1) {
+    while((opt = getopt(argc, argv, ":f:psdc:r:")) != -1) {
 
         switch(opt) {
 
@@ -109,6 +109,18 @@ void extractCommandLineArgs(int argc, char *argv[]) {
                 sflag = 1;
                 break;
 
+            // run option
+            case 'r':
+                args -> run = 1;
+                rflag = 1;
+
+                 if(optarg != NULL) {
+                    // store cvc5 path
+                    strncpy(args -> cvc5Path, optarg, BUFFER_SIZE - 1);
+                    args -> cvc5Path[BUFFER_SIZE - 1] = '\0';
+                }
+                break;
+
             // parser path
             case 'c':
                 if(optarg != NULL) {
@@ -124,7 +136,13 @@ void extractCommandLineArgs(int argc, char *argv[]) {
             // decode option
             case 'd':
                 args -> decode = 1;
-              //  dflag = 1;
+                break;
+
+            default:
+                if (opt == ':') {  // missing argument
+                    printf("Option --%c requires an argument\n", optopt);
+                    errNdie("");
+                }
                 break;
         }
     }
@@ -135,5 +153,9 @@ void extractCommandLineArgs(int argc, char *argv[]) {
 
     if((pflag == 1 || sflag == 1) && cflag == 0) {
         errNdie("Missing parser path");
+    }
+    
+    if(rflag == 1 && strlen(args -> cvc5Path) <= 0) {
+        errNdie("Missing cvc5 path");
     }
 }

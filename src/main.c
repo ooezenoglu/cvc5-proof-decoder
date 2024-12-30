@@ -8,6 +8,8 @@ struct type *types;
 struct var *vars;
 struct args *args;
 
+void runCvc5();
+
 int main(int argc, char *argv[]) {
 
     // struct to store input arguments
@@ -25,20 +27,13 @@ int main(int argc, char *argv[]) {
     if(args -> simplify == 1 && strlen(args->in.smt2.file) > 0) {
         // TODO: run encoder here
     }
+    
+    // run cvc5
+    if(args -> run == 1 && strlen(args->in.smt2.file) > 0) {
+        runCvc5();
+    }
 
     if(args -> decode == 1) {
-        // store proof file
-        strncpy(args->out.raw.file, "../FOL/SEU_FOL_unsat_proof.txt", BUFFER_SIZE - 1);
-        args->out.raw.file[BUFFER_SIZE - 1] = '\0';
-
-        // store proof file name
-        strncpy(args->out.raw.name, removeFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
-        args->out.raw.name[BUFFER_SIZE - 1] = '\0';
-
-        // store proof file extension
-        strncpy(args->out.raw.extension, getFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
-        args->out.raw.extension[BUFFER_SIZE - 1] = '\0';
-
         decode();
     }
 
@@ -48,4 +43,38 @@ int main(int argc, char *argv[]) {
     // cleanup
     free(args);
     return 0;
+}
+
+void runCvc5() {
+
+    char command[4*BUFFER_SIZE];
+
+    setExecPermissions(args->cvc5Path);
+
+    // store file
+    strncpy(args->out.raw.file, args->in.smt2.name, BUFFER_SIZE - 1);
+    strcat(args->out.raw.file, "_proof.txt");
+    args->out.raw.file[BUFFER_SIZE - 1] = '\0';
+
+    // store file name
+    strncpy(args->out.raw.name, removeFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
+    args->out.raw.name[BUFFER_SIZE - 1] = '\0';
+
+    // store file extension
+    strncpy(args->out.raw.extension, getFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
+    args->out.raw.extension[BUFFER_SIZE - 1] = '\0';
+    
+    snprintf(
+        command, 
+        sizeof(command),
+        "%s %s --dump-proofs --force-logic='HO_ALL' > %s",
+        args->cvc5Path,
+        args->in.smt2.file,
+        args->out.raw.file
+    );
+    
+    // execute command
+    if (system(command) == -1) {
+        errNdie("Could not execute the cvc5 parser command");
+    }
 }
