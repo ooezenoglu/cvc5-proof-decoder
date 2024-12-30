@@ -28,19 +28,36 @@ void setExecPermissions(char *path) {
 
 void printArgsStruct() {
 
-    printf("FILE: %s\n", args -> file);
-    printf("FILE NAME: %s\n", args -> fileName);
-    printf("FILE EXTENSION: %s\n", args -> fileExtension);
-    printf("PARSE: %i\n", args -> parse);
-    printf("SIMPLIFY: %i\n", args -> simplify);
-    printf("DECODE: %i\n", args -> decode);
-    printf("PARSER PATH: %s\n", args -> parserPath);
-    printf("CVC5 PATH: %s\n", args -> cvc5Path);
-    printf("PROOF FILE: %s\n", args -> proofFile);
-    printf("PROOF FILE NAME: %s\n", args -> proofFileName);
-    printf("PROOF FILE EXTENSION: %s\n", args -> proofFileExtension);
-    printf("PREPARSED PROOF FILE: %s\n", args -> preparsedProofFile);
-    printf("REFACTORED PROOF FILE: %s\n", args -> refactoredProofFile);
+    printf("++++ INPUT ++++\n");
+    printf("     P:\n");
+    printf("        FILE: %s\n", args->in.p.file);
+    printf("        NAME: %s\n", args->in.p.name);
+    printf("        EXTENSION: %s\n", args->in.p.extension);    
+    printf("     SMT2:\n");
+    printf("        FILE: %s\n", args->in.smt2.file);
+    printf("        NAME: %s\n", args->in.smt2.name);
+    printf("        EXTENSION: %s\n", args->in.smt2.extension);
+    printf("++++ OUTPUT ++++\n");
+    printf("     RAW:\n");
+    printf("        FILE: %s\n", args->out.raw.file);
+    printf("        NAME: %s\n", args->out.raw.name);
+    printf("        EXTENSION: %s\n", args->out.raw.extension);
+    printf("     PREPARSED:\n");
+    printf("        FILE: %s\n", args->out.preparsed.file);
+    printf("        NAME: %s\n", args->out.preparsed.name);
+    printf("        EXTENSION: %s\n", args->out.preparsed.extension);
+    printf("     REFACTORED:\n");
+    printf("        FILE: %s\n", args->out.refactored.file);
+    printf("        NAME: %s\n", args->out.refactored.name);
+    printf("        EXTENSION: %s\n", args->out.refactored.extension);
+    printf("++++ OPTIONS ++++\n");
+    printf("    PARSE: %i\n", args -> parse);
+    printf("    SIMPLIFY: %i\n", args -> simplify);
+    printf("    RUN: %i\n", args -> run);
+    printf("    DECODE: %i\n", args -> decode);
+    printf("++++ PATHS ++++\n");
+    printf("    PARSER PATH: %s\n", args -> parserPath);
+    printf("    CVC5 PATH: %s\n", args -> cvc5Path);
 }
 
 bool startsWith(char *str, char *comp) {

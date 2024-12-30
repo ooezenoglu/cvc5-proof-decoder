@@ -120,22 +120,24 @@ bool simplifyNotTrue(char* str) {
 void preparse() {
 
     FILE *proof, *preparsedProof;
-    char preparsedProofFileName[2*BUFFER_SIZE];
     char line[2*BUFFER_SIZE];
     bool simplify;
 
-    snprintf(
-        preparsedProofFileName, 
-        sizeof(preparsedProofFileName),
-        "%s_preparsed.txt",
-        args -> proofFileName
-    );
+    // store file
+    strncpy(args->out.preparsed.file, args->out.raw.name, BUFFER_SIZE - 1);
+    strcat(args->out.preparsed.file, "_preparsed.txt");
+    args->out.preparsed.file[BUFFER_SIZE - 1] = '\0';
 
-    strncpy(args -> preparsedProofFile, preparsedProofFileName, BUFFER_SIZE - 1);
-    args -> preparsedProofFile[BUFFER_SIZE - 1] = '\0';
+    // store file name
+    strncpy(args->out.preparsed.name, removeFileExtension(args->out.preparsed.file), BUFFER_SIZE - 1);
+    args->out.preparsed.name[BUFFER_SIZE - 1] = '\0';
+
+    // store file extension
+    strncpy(args->out.preparsed.extension, getFileExtension(args->out.preparsed.file), BUFFER_SIZE - 1);
+    args->out.preparsed.extension[BUFFER_SIZE - 1] = '\0';
     
-    proof = fopen(args -> proofFile, "r+");
-    preparsedProof = fopen(args -> preparsedProofFile, "w+");
+    proof = fopen(args->out.raw.file, "r+");
+    preparsedProof = fopen(args->out.preparsed.file, "w+");
 
     if(!proof) { errNdie("Could not open proof file"); }
     if(!preparsedProof) { errNdie("Could not create preparsed proof file"); }
@@ -176,21 +178,23 @@ void preparse() {
 void refactor() {
 
     FILE *preparsedProof, *refactoredProof;
-    char refactoredProofFileName[2*BUFFER_SIZE];
     char line[2*BUFFER_SIZE];
 
-    snprintf(
-        refactoredProofFileName, 
-        sizeof(refactoredProofFileName),
-        "%s_refactored.txt",
-        args -> proofFileName
-    );
+    // store file
+    strncpy(args->out.refactored.file, args->out.raw.name, BUFFER_SIZE - 1);
+    strcat(args->out.refactored.file, "_refactored.txt");
+    args->out.refactored.file[BUFFER_SIZE - 1] = '\0';
 
-    strncpy(args -> refactoredProofFile, refactoredProofFileName, BUFFER_SIZE - 1);
-    args -> refactoredProofFile[BUFFER_SIZE - 1] = '\0';
+    // store file name
+    strncpy(args->out.refactored.name, removeFileExtension(args->out.refactored.file), BUFFER_SIZE - 1);
+    args->out.refactored.name[BUFFER_SIZE - 1] = '\0';
+
+    // store file extension
+    strncpy(args->out.refactored.extension, getFileExtension(args->out.refactored.file), BUFFER_SIZE - 1);
+    args->out.refactored.extension[BUFFER_SIZE - 1] = '\0';
     
-    preparsedProof = fopen(args -> preparsedProofFile, "r+");
-    refactoredProof = fopen(args -> refactoredProofFile, "w+");
+    preparsedProof = fopen(args->out.preparsed.file, "r+");
+    refactoredProof = fopen(args->out.refactored.file, "w+");
 
     if(!preparsedProof) { errNdie("Could not open proof file"); }
     if(!refactoredProof) { errNdie("Could not create refactored proof file"); }

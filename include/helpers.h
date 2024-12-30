@@ -33,20 +33,32 @@ struct type {
     struct type *next;
 };
 
-struct args {
+struct file {
     char file[BUFFER_SIZE];
-    char fileName[BUFFER_SIZE];
-    char fileExtension[BUFFER_SIZE];
+    char name[BUFFER_SIZE];
+    char extension[BUFFER_SIZE];
+};
+
+struct input {
+    struct file p;
+    struct file smt2;
+};
+
+struct output {
+    struct file raw;
+    struct file preparsed;
+    struct file refactored;
+};
+
+struct args {
+    struct input in;
+    struct output out;
     bool parse;
     bool simplify;
+    bool run;
     bool decode;
     char parserPath[BUFFER_SIZE];
     char cvc5Path[BUFFER_SIZE];
-    char proofFile[BUFFER_SIZE];
-    char proofFileName[BUFFER_SIZE];
-    char proofFileExtension[BUFFER_SIZE];
-    char preparsedProofFile[BUFFER_SIZE];
-    char refactoredProofFile[BUFFER_SIZE];
 };
 
 // linked list functions

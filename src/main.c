@@ -16,23 +16,28 @@ int main(int argc, char *argv[]) {
 
     extractCommandLineArgs(argc, argv);
 
-    // parse .p files when --p or --s flags are set
-    if((args -> parse == 1 || args -> simplify == 1) && isEqual(args -> fileExtension, P) == 1) {
+    // parse .p into .smt2 when --p flag is set
+    if(args -> parse == 1 && strlen(args->in.p.file) > 0) {
         runCvc5Parser();
+    }
+
+    // intuitive representation of problem when --s flag is set
+    if(args -> simplify == 1 && strlen(args->in.smt2.file) > 0) {
+        // TODO: run encoder here
     }
 
     if(args -> decode == 1) {
         // store proof file
-        strncpy(args -> proofFile, "../FOL/SEU_FOL_unsat_proof.txt", BUFFER_SIZE - 1);
-        args -> proofFile[BUFFER_SIZE - 1] = '\0';
+        strncpy(args->out.raw.file, "../FOL/SEU_FOL_unsat_proof.txt", BUFFER_SIZE - 1);
+        args->out.raw.file[BUFFER_SIZE - 1] = '\0';
 
         // store proof file name
-        strncpy(args -> proofFileName, removeFileExtension(args -> proofFile), BUFFER_SIZE - 1);
-        args -> proofFileName[BUFFER_SIZE - 1] = '\0';
+        strncpy(args->out.raw.name, removeFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
+        args->out.raw.name[BUFFER_SIZE - 1] = '\0';
 
         // store proof file extension
-        strncpy(args -> proofFileExtension, getFileExtension(args -> proofFile), BUFFER_SIZE - 1);
-        args -> proofFileExtension[BUFFER_SIZE - 1] = '\0';
+        strncpy(args->out.raw.extension, getFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
+        args->out.raw.extension[BUFFER_SIZE - 1] = '\0';
 
         decode();
     }

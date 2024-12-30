@@ -5,16 +5,30 @@ void runCvc5Parser() {
     char command[4*BUFFER_SIZE];
 
     setExecPermissions(args -> parserPath);
-    
+
+    // store file
+    strncpy(args->in.smt2.file, args->in.p.name, BUFFER_SIZE - 1);
+    strcat(args->in.smt2.file, ".smt2");
+    args->in.smt2.file[BUFFER_SIZE - 1] = '\0';
+
+    // store file name
+    strncpy(args->in.smt2.name, args->in.p.name, BUFFER_SIZE - 1);
+    args->in.smt2.name[BUFFER_SIZE - 1] = '\0';
+
+    // store file extension
+    strncpy(args->in.smt2.extension, getFileExtension(args->in.smt2.file), BUFFER_SIZE - 1);
+    args->in.smt2.extension[BUFFER_SIZE - 1] = '\0';
+
     snprintf(
             command, 
             sizeof(command),
-            "%s -o raw-benchmark --parse-only --output-lang=smt2 %s > %s.smt2",
-            args -> parserPath,
-            args -> file,
-            args -> fileName
+            "%s -o raw-benchmark --parse-only --output-lang=smt2 %s > %s",
+            args->parserPath,
+            args->in.p.file,
+            args->in.smt2.file
             );
     
+    // execute command
     if (system(command) == -1) {
         errNdie("Could not execute the cvc5 parser command");
     }
@@ -29,7 +43,6 @@ void extractCommandLineArgs(int argc, char *argv[]) {
     int cflag = 0;
    // int dflag = 0;
     char *extension;
-    char *validExtensions[NUM_EXTENSIONS] = {P, SMT2};
 
     while((opt = getopt(argc, argv, ":f:psdc:")) != -1) {
 
@@ -46,21 +59,35 @@ void extractCommandLineArgs(int argc, char *argv[]) {
                     }
                     
                     // check whether file extension is supported
-                    for(int i = 0; i < NUM_EXTENSIONS; i++) {
-                        if(isEqual(extension, validExtensions[i])) {
-                            fflag = 1;
+                    if(isEqual(extension, P) || isEqual(extension, SMT2)) {
+                        fflag = 1;
 
+                        if(isEqual(extension, P)) {
                             // store file
-                            strncpy(args -> file, optarg, BUFFER_SIZE - 1);
-                            args -> file[BUFFER_SIZE - 1] = '\0';
+                            strncpy(args->in.p.file, optarg, BUFFER_SIZE - 1);
+                            args->in.p.file[BUFFER_SIZE - 1] = '\0';
 
                             // store file name
-                            strncpy(args -> fileName, removeFileExtension(optarg), BUFFER_SIZE - 1);
-                            args -> fileName[BUFFER_SIZE - 1] = '\0';
+                            strncpy(args->in.p.name, removeFileExtension(optarg), BUFFER_SIZE - 1);
+                            args->in.p.name[BUFFER_SIZE - 1] = '\0';
 
                             // store file extension
-                            strncpy(args -> fileExtension, extension, BUFFER_SIZE - 1);
-                            args -> fileExtension[BUFFER_SIZE - 1] = '\0';
+                            strncpy(args->in.p.extension, extension, BUFFER_SIZE - 1);
+                            args->in.p.extension[BUFFER_SIZE - 1] = '\0';
+                        }
+                        
+                        if(isEqual(extension, SMT2)) {
+                            // store file
+                            strncpy(args->in.smt2.file, optarg, BUFFER_SIZE - 1);
+                            args->in.smt2.file[BUFFER_SIZE - 1] = '\0';
+
+                            // store file name
+                            strncpy(args->in.smt2.name, removeFileExtension(optarg), BUFFER_SIZE - 1);
+                            args->in.smt2.name[BUFFER_SIZE - 1] = '\0';
+
+                            // store file extension
+                            strncpy(args->in.smt2.extension, extension, BUFFER_SIZE - 1);
+                            args->in.smt2.extension[BUFFER_SIZE - 1] = '\0';
                         }
                     }
 
