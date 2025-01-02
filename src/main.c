@@ -7,6 +7,7 @@ struct node *varList;
 struct type *types;
 struct var *vars;
 struct args *args;
+struct hashTable *table;
 
 void runCvc5();
 
@@ -15,6 +16,8 @@ int main(int argc, char *argv[]) {
     // struct to store input arguments
     args = malloc(sizeof(struct args));
     memset(args, 0, sizeof(struct args));
+
+    table = NULL;
 
     extractCommandLineArgs(argc, argv);
 

@@ -294,10 +294,108 @@ void refactor() {
     fclose(refactoredProof);
 }
 
+void parse() {
+
+    FILE *refactoredProof, *parsedProof;
+    char line[2*BUFFER_SIZE];
+
+    // store file
+    strncpy(args->out.parsed.file, args->out.raw.name, BUFFER_SIZE - 1);
+    strcat(args->out.parsed.file, "_parsed.txt");
+    args->out.parsed.file[BUFFER_SIZE - 1] = '\0';
+
+    // store file name
+    strncpy(args->out.parsed.name, removeFileExtension(args->out.parsed.file), BUFFER_SIZE - 1);
+    args->out.parsed.name[BUFFER_SIZE - 1] = '\0';
+
+    // store file extension
+    strncpy(args->out.parsed.extension, getFileExtension(args->out.parsed.file), BUFFER_SIZE - 1);
+    args->out.parsed.extension[BUFFER_SIZE - 1] = '\0';
+    
+    refactoredProof = fopen(args->out.refactored.file, "r+");
+    parsedProof = fopen(args->out.parsed.file, "w+");
+
+    if(!refactoredProof) { errNdie("Could not open refactored proof file"); }
+    if(!parsedProof) { errNdie("Could not create parsed proof file"); }
+
+    while(1) {
+
+        // read line
+        if(!fgets(line, sizeof(line), refactoredProof)) {
+            break; // end of file
+        }
+
+        // if a tag @ is encountered, store it in the hash table
+        if(contains(line, "@")) {
+            
+            printf("@-symbol found in line: %s", line);
+            
+            char tag[BUFFER_SIZE];
+            char type[BUFFER_SIZE];
+            char rest[BUFFER_SIZE];
+
+            // extract tag
+            sscanf(line, "(%s%*[^@]%s %[^\n]", type, tag, rest);
+            
+            // delete last closing bracket
+            rest[strlen(rest) - 1] = '\0';
+
+            printf("Type: %s, Tag: %s, Data: %s\n", type, tag, rest);
+            printf("\n");
+
+            // for each @ in the rest, check hash table and replace entry
+            char *ptr = rest;
+
+            // check whether tags from older steps should be replaced
+            while ((ptr = strchr(ptr, '@')) != NULL) {
+
+                char t[BUFFER_SIZE];
+                struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
+                int i = 0;
+
+                // extract the tag from the rest
+                while (*ptr && *ptr != ' ' && *ptr != ')' && *ptr != ']' && i < sizeof(t) - 1) {
+                    t[i++] = *ptr++;
+                }
+                t[i] = '\0';
+
+                printf("Searching for tag: '%s'\n", t);
+                HASH_FIND_STR(table, t, match);
+
+                if (match) {
+                    printf("Found entry with key %s with entry %s\n", match -> tag, match ->line.rest);
+                    replaceAll(rest, t, match->line.rest); 
+                    printf("REST: %s\n", rest);
+                }
+                ptr++;
+            }
+
+            // add the new entry to the hash table
+            struct hashTable *entry;
+        
+            entry = (struct hashTable *) malloc(sizeof(struct hashTable));
+            strcpy(entry->tag, tag);
+            strcpy(entry->line.type, type);
+            strcpy(entry->line.rest, rest);
+            HASH_ADD_STR(table, tag, entry);
+
+            // debug: show all elements in the hash table
+            struct hashTable *current = (struct hashTable *) malloc(sizeof(struct hashTable));
+            printf("\n++++ Hash table entries ++++\n");
+            HASH_ITER(hh, table, current, entry) {
+                printf("Key: %s, Value: %s\n", current->tag, current->line.rest);
+            }
+            printf("+++++++++++++++\n\n");
+        }
+        
+    }
+}
+
 void decode() {
 
     preparse();
     refactor();
+    parse();
 
     // debug
     printf("++++ Type List ++++\n");
@@ -306,4 +404,5 @@ void decode() {
     printf("++++ Variable List ++++\n");
     printVarList(varList);
     printf("+++++++++++++++++++++++\n");
+
 }

@@ -50,6 +50,10 @@ void printArgsStruct() {
     printf("        FILE: %s\n", args->out.refactored.file);
     printf("        NAME: %s\n", args->out.refactored.name);
     printf("        EXTENSION: %s\n", args->out.refactored.extension);
+    printf("     PARSED:\n");
+    printf("        FILE: %s\n", args->out.parsed.file);
+    printf("        NAME: %s\n", args->out.parsed.name);
+    printf("        EXTENSION: %s\n", args->out.parsed.extension);
     printf("++++ OPTIONS ++++\n");
     printf("    PARSE: %i\n", args -> parse);
     printf("    SIMPLIFY: %i\n", args -> simplify);

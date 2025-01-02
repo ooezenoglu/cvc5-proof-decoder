@@ -25,6 +25,7 @@ bool simplifyNotFalse(char* str);
 bool simplifyNotTrue(char* str);
 void preparse();
 void refactor();
+void parse();
 void decode();
 
 extern struct node *typeList;

@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <regex.h>
+#include "uthash.h"
 
 #define BUFFER_SIZE 256
 #define SMT2 "smt2"
@@ -48,6 +49,7 @@ struct output {
     struct file raw;
     struct file preparsed;
     struct file refactored;
+    struct file parsed;
 };
 
 struct args {
@@ -59,6 +61,17 @@ struct args {
     bool decode;
     char parserPath[BUFFER_SIZE];
     char cvc5Path[BUFFER_SIZE];
+};
+
+struct line {
+    char type[BUFFER_SIZE];
+    char rest[BUFFER_SIZE];
+};
+
+struct hashTable {
+    char tag[BUFFER_SIZE]; // key
+    struct line line; // value
+    UT_hash_handle hh; // uthash structure
 };
 
 // linked list functions
@@ -78,6 +91,8 @@ int getIndexOfFileExtension(char *file);
 char *getFileExtension(char *file);
 void errNdie(char *msg);
 
+extern struct hashTable *table;
+extern struct hashTable *entry;
 extern struct node *typeList;
 extern struct node *varList;
 extern struct type *types;
