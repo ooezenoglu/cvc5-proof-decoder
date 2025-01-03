@@ -66,6 +66,9 @@ struct args {
 struct line {
     char type[BUFFER_SIZE];
     char rest[BUFFER_SIZE];
+    char rule[BUFFER_SIZE];
+    char prems[BUFFER_SIZE];
+    char args[BUFFER_SIZE];
 };
 
 struct hashTable {

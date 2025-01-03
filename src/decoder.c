@@ -330,9 +330,12 @@ void parse() {
             
             printf("@-symbol found in line: %s", line);
             
-            char tag[BUFFER_SIZE];
-            char type[BUFFER_SIZE];
-            char rest[BUFFER_SIZE];
+            char tag[BUFFER_SIZE] = {0};
+            char type[BUFFER_SIZE] = {0};
+            char rest[BUFFER_SIZE] = {0};
+            char rule[BUFFER_SIZE] = {0};
+            char prems[BUFFER_SIZE] = {0};
+            char args[BUFFER_SIZE] = {0};
 
             // extract tag
             sscanf(line, "(%s%*[^@]%s %[^\n]", type, tag, rest);
@@ -340,13 +343,38 @@ void parse() {
             // delete last closing bracket
             rest[strlen(rest) - 1] = '\0';
 
-            printf("Type: %s, Tag: %s, Data: %s\n", type, tag, rest);
+            // extract more details depending on the type
+            if (isEqual(type, "define")) {
+                sscanf(rest, " %[^)]%*c %[^\n]", prems, args);
+                strcat(prems, ")");
+
+            } else if (isEqual(type, "assume")) {
+                strcpy(args, rest);
+
+            } else if (isEqual(type, "step")) {
+                 if (startsWith(rest, ":rule")) {
+                    sscanf(rest, ":rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
+                } else {
+                    sscanf(rest, "%*[^:]:rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
+                }
+              
+            } else {
+                printf("%s-", type);
+                errNdie("Type unknown");
+            }
+
+            printf("Tag: %s\n", tag);
+            printf("Type: %s\n", type);
+            printf("Rest: %s\n", rest);
+            printf("Rule: %s\n", rule);
+            printf("Prems: %s\n", prems);
+            printf("Args: %s\n", args);
             printf("\n");
 
             // for each @ in the rest, check hash table and replace entry
-            char *ptr = rest;
+            char *ptr = args;
 
-            // check whether tags from older steps should be replaced
+            // check whether tags from older steps should be replaced in args
             while ((ptr = strchr(ptr, '@')) != NULL) {
 
                 char t[BUFFER_SIZE];
@@ -362,11 +390,7 @@ void parse() {
                 printf("Searching for tag: '%s'\n", t);
                 HASH_FIND_STR(table, t, match);
 
-                if (match) {
-                    printf("Found entry with key %s with entry %s\n", match -> tag, match ->line.rest);
-                    replaceAll(rest, t, match->line.rest); 
-                    printf("REST: %s\n", rest);
-                }
+                if (match) { replaceAll(args, t, match->line.args); }
                 ptr++;
             }
 
@@ -377,13 +401,17 @@ void parse() {
             strcpy(entry->tag, tag);
             strcpy(entry->line.type, type);
             strcpy(entry->line.rest, rest);
+            strcpy(entry->line.rule, rule);
+            strcpy(entry->line.prems, prems);
+            strcpy(entry->line.args, args);
             HASH_ADD_STR(table, tag, entry);
 
             // debug: show all elements in the hash table
             struct hashTable *current = (struct hashTable *) malloc(sizeof(struct hashTable));
             printf("\n++++ Hash table entries ++++\n");
             HASH_ITER(hh, table, current, entry) {
-                printf("Key: %s, Value: %s\n", current->tag, current->line.rest);
+                printf("Tag: %s, Type: %s, Rest: %s, Rule: %s, Prems: %s, Args: %s\n", 
+                current->tag, current->line.type, current->line.rest, current->line.rule, current->line.prems, current->line.args);
             }
             printf("+++++++++++++++\n\n");
         }
