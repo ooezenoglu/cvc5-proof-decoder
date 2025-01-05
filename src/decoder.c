@@ -325,6 +325,12 @@ void parse() {
             break; // end of file
         }
 
+        // remove line breaks
+        int len = strlen(line);
+        if(len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
+
         // if a tag @ is encountered, store it in the hash table
         if(contains(line, "@")) {
             
@@ -414,6 +420,11 @@ void parse() {
                 current->tag, current->line.type, current->line.rest, current->line.rule, current->line.prems, current->line.args);
             }
             printf("+++++++++++++++\n\n");
+
+            fprintf(parsedProof, "%s %s (%s, %s %s)\n", type, args, tag, rule, prems);
+        
+        } else {
+            fprintf(parsedProof, "%s\n", line);
         }
         
     }
