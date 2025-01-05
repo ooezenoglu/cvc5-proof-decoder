@@ -266,26 +266,26 @@ void refactor() {
         }
 
         // extract variable name + type
-        if (contains(line, "eo::var")) {
+        // if (contains(line, "eo::var")) {
             
-            char name[BUFFER_SIZE];
-            char type[BUFFER_SIZE];
+        //     char name[BUFFER_SIZE];
+        //     char type[BUFFER_SIZE];
 
-            // extract name and type
-            sscanf(line, "%*[^'\"]\"%255[^\"]\" %255[^)]", name, type);
+        //     // extract name and type
+        //     sscanf(line, "%*[^'\"]\"%255[^\"]\" %255[^)]", name, type);
 
-            // add to the list
-            struct var new_var;
-            strncpy(new_var.name, name, BUFFER_SIZE - 1);
-            new_var.name[BUFFER_SIZE - 1] = '\0';
+        //     // add to the list
+        //     struct var new_var;
+        //     strncpy(new_var.name, name, BUFFER_SIZE - 1);
+        //     new_var.name[BUFFER_SIZE - 1] = '\0';
 
-            strncpy(new_var.type, type, BUFFER_SIZE - 1);
-            new_var.type[BUFFER_SIZE - 1] = '\0';
+        //     strncpy(new_var.type, type, BUFFER_SIZE - 1);
+        //     new_var.type[BUFFER_SIZE - 1] = '\0';
 
-            push(&varList, &new_var, sizeof(struct var));
+        //     push(&varList, &new_var, sizeof(struct var));
             
-            replaceAll(line,  "\\(eo::var [^)]*\\)", new_var.name);
-        }
+        //     // replaceAll(line,  "\\(eo::var [^)]*\\)", new_var.name);
+        // }
 
         fprintf(refactoredProof, "%s\n", line);
     }
@@ -331,102 +331,111 @@ void parse() {
             line[len - 1] = '\0';
         }
 
-        // if a tag @ is encountered, store it in the hash table
+        char type[BUFFER_SIZE] = {0};
+        char tag[BUFFER_SIZE] = {0};
+        char rest[BUFFER_SIZE] = {0};
+        char rule[BUFFER_SIZE] = {0};
+        char prems[BUFFER_SIZE] = {0};
+        char args[BUFFER_SIZE] = {0};
+        char note[BUFFER_SIZE] = {0};
+
+        // extract tag
         if(contains(line, "@")) {
-            
-            printf("@-symbol found in line: %s", line);
-            
-            char tag[BUFFER_SIZE] = {0};
-            char type[BUFFER_SIZE] = {0};
-            char rest[BUFFER_SIZE] = {0};
-            char rule[BUFFER_SIZE] = {0};
-            char prems[BUFFER_SIZE] = {0};
-            char args[BUFFER_SIZE] = {0};
-
-            // extract tag
             sscanf(line, "(%s%*[^@]%s %[^\n]", type, tag, rest);
-            
-            // delete last closing bracket
-            rest[strlen(rest) - 1] = '\0';
-
-            // extract more details depending on the type
-            if (isEqual(type, "define")) {
-                sscanf(rest, " %[^)]%*c %[^\n]", prems, args);
-                strcat(prems, ")");
-
-            } else if (isEqual(type, "assume")) {
-                strcpy(args, rest);
-
-            } else if (isEqual(type, "step")) {
-                 if (startsWith(rest, ":rule")) {
-                    sscanf(rest, ":rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
-                } else {
-                    sscanf(rest, "%*[^:]:rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
-                }
-              
-            } else {
-                printf("%s-", type);
-                errNdie("Type unknown");
-            }
-
-            printf("Tag: %s\n", tag);
-            printf("Type: %s\n", type);
-            printf("Rest: %s\n", rest);
-            printf("Rule: %s\n", rule);
-            printf("Prems: %s\n", prems);
-            printf("Args: %s\n", args);
-            printf("\n");
-
-            // for each @ in the rest, check hash table and replace entry
-            char *ptr = args;
-
-            // check whether tags from older steps should be replaced in args
-            while ((ptr = strchr(ptr, '@')) != NULL) {
-
-                char t[BUFFER_SIZE];
-                struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
-                int i = 0;
-
-                // extract the tag from the rest
-                while (*ptr && *ptr != ' ' && *ptr != ')' && *ptr != ']' && i < sizeof(t) - 1) {
-                    t[i++] = *ptr++;
-                }
-                t[i] = '\0';
-
-                printf("Searching for tag: '%s'\n", t);
-                HASH_FIND_STR(table, t, match);
-
-                if (match) { replaceAll(args, t, match->line.args); }
-                ptr++;
-            }
-
-            // add the new entry to the hash table
-            struct hashTable *entry;
-        
-            entry = (struct hashTable *) malloc(sizeof(struct hashTable));
-            strcpy(entry->tag, tag);
-            strcpy(entry->line.type, type);
-            strcpy(entry->line.rest, rest);
-            strcpy(entry->line.rule, rule);
-            strcpy(entry->line.prems, prems);
-            strcpy(entry->line.args, args);
-            HASH_ADD_STR(table, tag, entry);
-
-            // debug: show all elements in the hash table
-            struct hashTable *current = (struct hashTable *) malloc(sizeof(struct hashTable));
-            printf("\n++++ Hash table entries ++++\n");
-            HASH_ITER(hh, table, current, entry) {
-                printf("Tag: %s, Type: %s, Rest: %s, Rule: %s, Prems: %s, Args: %s\n", 
-                current->tag, current->line.type, current->line.rest, current->line.rule, current->line.prems, current->line.args);
-            }
-            printf("+++++++++++++++\n\n");
-
-            fprintf(parsedProof, "%s %s (%s, %s %s)\n", type, args, tag, rule, prems);
-        
         } else {
-            fprintf(parsedProof, "%s\n", line);
+            sscanf(line, "(%s %[^\n]", type, rest);
         }
+
+        // delete last closing bracket
+        rest[strlen(rest) - 1] = '\0';
+
+        // extract more details depending on the type
+        if (isEqual(type, "declare-type")) {
+            sscanf(rest, "%s %[^\n]", args, note);
         
+        } else if (isEqual(type, "declare-const") ) {
+            sscanf(rest, "%s %[^\n]", args, note);
+        
+        } else if (isEqual(type, "define")) {
+            if(contains(rest, "eo::var")) {
+                sscanf(rest, "%[^)]%*c (eo::var \"%[^\"]\" %[^)]", prems, args, note);
+            } else {
+                sscanf(rest, " %[^)]%*c %[^\n]", prems, args);
+            }
+            strcat(prems, ")");
+
+        } else if (isEqual(type, "assume")) {
+            strcpy(args, rest);
+
+        } else if (isEqual(type, "step")) {
+            if (startsWith(rest, ":rule")) {
+                sscanf(rest, ":rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
+            } else {
+                sscanf(rest, "%*[^:]:rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
+            }
+        
+        } else { // type unknown; copy what's there
+            fprintf(parsedProof, "%s\n", line);
+            continue;
+        }
+
+        // printf("Tag: %s\n", tag);
+        // printf("Type: %s\n", type);
+        // printf("Rest: %s\n", rest);
+        // printf("Rule: %s\n", rule);
+        // printf("Prems: %s\n", prems);
+        // printf("Args: %s\n", args);
+        // printf("Note: %s\n", args);
+        // printf("\n");
+
+        char *ptr = args;
+
+        // check whether tags from older steps should be replaced in args
+        while ((ptr = strchr(ptr, '@')) != NULL) {
+
+            char t[BUFFER_SIZE];
+            struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
+            int i = 0;
+
+            // extract the tag from the rest
+            while (*ptr && *ptr != ' ' && *ptr != ')' && *ptr != ']' && i < sizeof(t) - 1) {
+                t[i++] = *ptr++;
+            }
+            t[i] = '\0';
+
+            // printf("Searching for tag: '%s'\n", t);
+            HASH_FIND_STR(table, t, match);
+
+            if (match) { replaceAll(args, t, match->line.args); }
+            ptr++;
+        }
+
+        // add the new entry to the hash table
+        struct hashTable *entry;
+        
+        entry = (struct hashTable *) malloc(sizeof(struct hashTable));
+        strcpy(entry->tag, tag);
+        strcpy(entry->line.type, type);
+        strcpy(entry->line.rest, rest);
+        strcpy(entry->line.rule, rule);
+        strcpy(entry->line.prems, prems);
+        strcpy(entry->line.args, args);
+        strcpy(entry->line.note, note);
+        HASH_ADD_STR(table, tag, entry);
+
+        // // debug: show all elements in the hash table
+        // struct hashTable *current = (struct hashTable *) malloc(sizeof(struct hashTable));
+        // printf("\n++++ Hash table entries ++++\n");
+        // HASH_ITER(hh, table, current, entry) {
+        //     printf("Tag: %s, Type: %s, Rest: %s, Rule: %s, Prems: %s, Args: %s, Note: %s\n", 
+        //     current->tag, current->line.type, current->line.rest, current->line.rule, 
+        //     current->line.prems, current->line.args, current->line.note);
+        // }
+        // printf("+++++++++++++++\n\n");
+
+        // TODO format ouput
+
+        fprintf(parsedProof, "%s %s %s (%s, %s %s)\n", type, args, note, tag, rule, prems);
     }
 }
 
