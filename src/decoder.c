@@ -81,64 +81,12 @@ bool replaceAll(char* str, char* pattern, char* replacement) {
     return matched;
 }
 
-bool applyDeMorgansLaw(char* str) {
-    bool replaced = false;
-
-    // not(and(...))
-    replaced |= replaceAll(str, "not\\(and\\(([^)]+)\\s+([^)]+)\\)\\)", "or(not (\\1) not (\\2))");
-
-    // not(or(...))
-    replaced |= replaceAll(str, "not\\(or\\(([^)]+)\\s+([^)]+)\\)\\)", "and(not (\\1) not (\\2))");
-
-    return replaced;
-}
-
-bool simplifyImplication(char* str) {
-    return replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not (\\1) (\\2)");
-}
-
-bool simplifyNotExists(char* str) {
-    return replaceAll(str, NOTEXISTS, FORALLNOT);
-}
-
-bool simplifyNotForall(char* str) {
-    bool modified = replaceAll(str, "not forall", "exists not");
-
-    modified |=  replaceAll(str, "\\(not \\(forall ([^ ]+) \\((.*)\\)\\)\\)", "(exists (\\1) not (\\2))");
-    return modified;
-}
-
-bool simplifyDoubleNeg(char* str) {
-    return replaceAll(str, NOTNOT, "");
-}
-
-bool simplifyNotFalse(char* str) {
-    return replaceAll(str, NOTFALSE, TRUE);
-}
-
-bool simplifyNotTrue(char* str) {
-    return replaceAll(str, NOTTRUE, FALSE);
-}
-
 void preparse() {
 
     FILE *proof, *preparsedProof;
     char line[2*BUFFER_SIZE];
     bool simplify;
 
-    // store file
-    strncpy(args->out.preparsed.file, args->out.raw.name, BUFFER_SIZE - 1);
-    strcat(args->out.preparsed.file, "_preparsed.txt");
-    args->out.preparsed.file[BUFFER_SIZE - 1] = '\0';
-
-    // store file name
-    strncpy(args->out.preparsed.name, removeFileExtension(args->out.preparsed.file), BUFFER_SIZE - 1);
-    args->out.preparsed.name[BUFFER_SIZE - 1] = '\0';
-
-    // store file extension
-    strncpy(args->out.preparsed.extension, getFileExtension(args->out.preparsed.file), BUFFER_SIZE - 1);
-    args->out.preparsed.extension[BUFFER_SIZE - 1] = '\0';
-    
     proof = fopen(args->out.raw.file, "r+");
     preparsedProof = fopen(args->out.preparsed.file, "w+");
 
@@ -182,19 +130,6 @@ void refactor() {
 
     FILE *preparsedProof, *refactoredProof;
     char line[2*BUFFER_SIZE];
-
-    // store file
-    strncpy(args->out.refactored.file, args->out.raw.name, BUFFER_SIZE - 1);
-    strcat(args->out.refactored.file, "_refactored.txt");
-    args->out.refactored.file[BUFFER_SIZE - 1] = '\0';
-
-    // store file name
-    strncpy(args->out.refactored.name, removeFileExtension(args->out.refactored.file), BUFFER_SIZE - 1);
-    args->out.refactored.name[BUFFER_SIZE - 1] = '\0';
-
-    // store file extension
-    strncpy(args->out.refactored.extension, getFileExtension(args->out.refactored.file), BUFFER_SIZE - 1);
-    args->out.refactored.extension[BUFFER_SIZE - 1] = '\0';
     
     preparsedProof = fopen(args->out.preparsed.file, "r+");
     refactoredProof = fopen(args->out.refactored.file, "w+");
@@ -269,28 +204,6 @@ void refactor() {
             current = current -> next;
         }
 
-        // extract variable name + type
-        // if (contains(line, "eo::var")) {
-            
-        //     char name[BUFFER_SIZE];
-        //     char type[BUFFER_SIZE];
-
-        //     // extract name and type
-        //     sscanf(line, "%*[^'\"]\"%255[^\"]\" %255[^)]", name, type);
-
-        //     // add to the list
-        //     struct var new_var;
-        //     strncpy(new_var.name, name, BUFFER_SIZE - 1);
-        //     new_var.name[BUFFER_SIZE - 1] = '\0';
-
-        //     strncpy(new_var.type, type, BUFFER_SIZE - 1);
-        //     new_var.type[BUFFER_SIZE - 1] = '\0';
-
-        //     push(&varList, &new_var, sizeof(struct var));
-            
-        //     // replaceAll(line,  "\\(eo::var [^)]*\\)", new_var.name);
-        // }
-
         fprintf(refactoredProof, "%s\n", line);
     }
 
@@ -305,19 +218,6 @@ void parse() {
     char buf[8*BUFFER_SIZE];
     bool simplify;
 
-    // store file
-    strncpy(args->out.parsed.file, args->out.raw.name, BUFFER_SIZE - 1);
-    strcat(args->out.parsed.file, "_parsed.txt");
-    args->out.parsed.file[BUFFER_SIZE - 1] = '\0';
-
-    // store file name
-    strncpy(args->out.parsed.name, removeFileExtension(args->out.parsed.file), BUFFER_SIZE - 1);
-    args->out.parsed.name[BUFFER_SIZE - 1] = '\0';
-
-    // store file extension
-    strncpy(args->out.parsed.extension, getFileExtension(args->out.parsed.file), BUFFER_SIZE - 1);
-    args->out.parsed.extension[BUFFER_SIZE - 1] = '\0';
-    
     refactoredProof = fopen(args->out.refactored.file, "r+");
     parsedProof = fopen(args->out.parsed.file, "w+");
 
@@ -480,19 +380,6 @@ void formatProof() {
     char line[8*BUFFER_SIZE];
     FILE *parsedProof, *formattedProof;
 
-    // store file
-    strncpy(args->out.formatted.file, args->out.raw.name, BUFFER_SIZE - 1);
-    strcat(args->out.formatted.file, "_formatted.txt");
-    args->out.formatted.file[BUFFER_SIZE - 1] = '\0';
-
-    // store file name
-    strncpy(args->out.formatted.name, removeFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
-    args->out.formatted.name[BUFFER_SIZE - 1] = '\0';
-
-    // store file extension
-    strncpy(args->out.formatted.extension, getFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
-    args->out.formatted.extension[BUFFER_SIZE - 1] = '\0';
-    
     parsedProof = fopen(args->out.parsed.file, "r+");
     formattedProof = fopen(args->out.formatted.file, "w+");
 
@@ -500,7 +387,7 @@ void formatProof() {
     if(!formattedProof) { errNdie("Could not create formatted proof file"); }
 
     // fixed column width for lhs
-    int COLUMN_WIDTH = 90;
+    int COLUMN_WIDTH = 80;
 
     while(1) {
 
@@ -515,9 +402,12 @@ void formatProof() {
             line[len - 1] = '\0';
         }
 
+        importSymbols();
+
         struct dict *entry, *tmp;
         
-        HASH_ITER(hh, symbols, entry, tmp) {
+        // iteratively replace symbols from the dict
+        HASH_ITER(hh, symbs, entry, tmp) {
            replaceAll(line, entry->key, entry->val);
         }
 
@@ -542,25 +432,11 @@ void formatProof() {
 
 void decode() {
 
-    addSymbol("forall", "∀");
-    addSymbol("exists", "∃");
-    addSymbol("subset", "⊆");
-    addSymbol("not", "~");
-    addSymbol("or", "∨");
-    addSymbol("and", "∧");
-
     preparse();
     refactor();
     parse();
     formatProof();
 
-    // // debug
-    // printf("++++ Type List ++++\n");
-    // printTypeList(typeList);
-    // printf("+++++++++++++++++++\n");
-    // printf("++++ Variable List ++++\n");
-    // printVarList(varList);
-    // printf("+++++++++++++++++++++++\n");
-        
+    // debug
     printHashTable();
 }

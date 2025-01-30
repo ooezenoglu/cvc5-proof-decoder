@@ -8,7 +8,7 @@ struct type *types;
 struct var *vars;
 struct args *args;
 struct hashTable *table;
-struct dict *symbols;
+struct dict *symbs;
 
 void runCvc5();
 
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     memset(args, 0, sizeof(struct args));
 
     table = NULL;
-    symbols = NULL;
+    symbs = NULL;
 
     extractCommandLineArgs(argc, argv);
 
@@ -47,6 +47,12 @@ int main(int argc, char *argv[]) {
             args->result[strcspn(args->result, "\n")] = '\0';
         }
 
+        // set up output files
+        generateOutputFile(args->out.preparsed.file, args->out.raw.name, "_preparsed.txt");
+        generateOutputFile(args->out.refactored.file, args->out.raw.name, "_refactored.txt");
+        generateOutputFile(args->out.parsed.file, args->out.raw.name, "_parsed.txt");
+        generateOutputFile(args->out.formatted.file, args->out.raw.name, "_formatted.txt");
+
         // TODO error handling
         
         decode();
@@ -66,18 +72,10 @@ void runCvc5() {
 
     setExecPermissions(args->cvc5Path);
 
-    // store file
-    strncpy(args->out.raw.file, args->in.smt2.name, BUFFER_SIZE - 1);
-    strcat(args->out.raw.file, "_proof.txt");
-    args->out.raw.file[BUFFER_SIZE - 1] = '\0';
-
-    // store file name
-    strncpy(args->out.raw.name, removeFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
-    args->out.raw.name[BUFFER_SIZE - 1] = '\0';
-
-    // store file extension
-    strncpy(args->out.raw.extension, getFileExtension(args->out.raw.file), BUFFER_SIZE - 1);
-    args->out.raw.extension[BUFFER_SIZE - 1] = '\0';
+    // store file, file name, file extension
+    generateOutputFile(args->out.raw.file, args->in.smt2.name, "_proof.txt");
+    generateOutputFile(args->out.raw.name, removeFileExtension(args->out.raw.file), "");
+    generateOutputFile(args->out.raw.extension, getFileExtension(args->out.raw.file), "");
     
     snprintf(
         command, 

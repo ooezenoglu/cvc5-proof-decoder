@@ -10,11 +10,24 @@
 #include <sys/stat.h>
 #include <regex.h>
 #include "uthash.h"
+#include "rules.h"
+#include "decoder.h"
+#include "symbols.h"
 
 #define BUFFER_SIZE 256
 #define SMT2 "smt2"
 #define P "p"
 #define NUM_EXTENSIONS 2
+#define NOTTRUE "not true"
+#define FALSE "false"
+#define NOTFALSE "not false"
+#define TRUE "true"
+#define NOTNOT "not not"
+#define NOTFORALL "not forall"
+#define NOTEXISTS "not exists"
+#define EXISTSNOT "exists not"
+#define FORALLNOT "forall not"
+#define IMPL "=>"
 
 struct node {
     void* structure;
@@ -92,6 +105,7 @@ void printTypeList(struct node *head);
 struct node* addNode(void* structure, int size);
 void push(struct node** head, void* structure, int size);
 
+void generateOutputFile(char *output, char *input, char *suffix);
 bool contains(const char *str, const char *substr);
 void setExecPermissions(char *path);
 void printArgsStruct();
@@ -106,7 +120,7 @@ int getIndexOfFileExtension(char *file);
 char *getFileExtension(char *file);
 void errNdie(char *msg);
 
-extern struct dict *symbols;
+extern struct dict *symbs;
 extern struct hashTable *table;
 extern struct hashTable *entry;
 extern struct node *typeList;

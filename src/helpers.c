@@ -1,5 +1,9 @@
 #include "../include/helpers.h"
 
+void generateOutputFile(char *output, char *input, char *suffix) {
+    snprintf(output, BUFFER_SIZE, "%s%s", input, suffix);
+}
+
 bool contains(const char *str, const char *substr) {
     
     // check whether input strings are valid
@@ -92,7 +96,7 @@ void addSymbol(char *key, char *value) {
 
     strcpy(entry->key, key);
     strcpy(entry->val, value);
-    HASH_ADD_STR(symbols, key, entry);
+    HASH_ADD_STR(symbs, key, entry);
 }
 
 void trimWhitespaces(char *str) {
