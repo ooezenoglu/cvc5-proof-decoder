@@ -454,55 +454,93 @@ void parse() {
         snprintf(
             buf, 
             sizeof(buf),
-            "%s %s %s (%s, %s %s)\n",
-            type, args, note, tag, 
+            "%s %s %s #(%s %s)\n",
+            type, args, note, 
             rule, prems
         );
+
+        // remove unnecessary whitespace in brackets
+        replaceAll(buf, "\\(\\s*\\)", "");
+        replaceAll(buf, "\\(\\s+", "(");
+        replaceAll(buf, "\\s+\\)", ")");
+        replaceAll(buf, "\\(\\)", "");
 
         trimWhitespaces(buf);
 
         printf("%s\n", buf);
         fprintf(parsedProof, "%s", buf);
     }
+
+
+    fclose(refactoredProof);
+    fclose(parsedProof);
 }
 
-// void formatProof() {
+void formatProof() {
 
-//     struct hashTable *current, *tmp;
-//     char line[8*BUFFER_SIZE];
-//     FILE *parsedProof, *formattedProof;
+    char line[8*BUFFER_SIZE];
+    FILE *parsedProof, *formattedProof;
 
-//     // store file
-//     strncpy(args->out.formatted.file, args->out.raw.name, BUFFER_SIZE - 1);
-//     strcat(args->out.formatted.file, "_formatted.txt");
-//     args->out.formatted.file[BUFFER_SIZE - 1] = '\0';
+    // store file
+    strncpy(args->out.formatted.file, args->out.raw.name, BUFFER_SIZE - 1);
+    strcat(args->out.formatted.file, "_formatted.txt");
+    args->out.formatted.file[BUFFER_SIZE - 1] = '\0';
 
-//     // store file name
-//     strncpy(args->out.formatted.name, removeFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
-//     args->out.formatted.name[BUFFER_SIZE - 1] = '\0';
+    // store file name
+    strncpy(args->out.formatted.name, removeFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
+    args->out.formatted.name[BUFFER_SIZE - 1] = '\0';
 
-//     // store file extension
-//     strncpy(args->out.formatted.extension, getFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
-//     args->out.formatted.extension[BUFFER_SIZE - 1] = '\0';
+    // store file extension
+    strncpy(args->out.formatted.extension, getFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
+    args->out.formatted.extension[BUFFER_SIZE - 1] = '\0';
     
-//     parsedProof = fopen(args->out.parsed.file, "r+");
-//     formattedProof = fopen(args->out.formatted.file, "w+");
+    parsedProof = fopen(args->out.parsed.file, "r+");
+    formattedProof = fopen(args->out.formatted.file, "w+");
 
-//     if(!parsedProof) { errNdie("Could not open parsed proof file"); }
-//     if(!formattedProof) { errNdie("Could not create formatted proof file"); }
+    if(!parsedProof) { errNdie("Could not open parsed proof file"); }
+    if(!formattedProof) { errNdie("Could not create formatted proof file"); }
+
+    // fixed column width for lhs
+    int COLUMN_WIDTH = 90;
+
+    while(1) {
+
+        // read line
+        if(!fgets(line, sizeof(line), parsedProof)) {
+            break; // end of file
+        }
+
+        // remove line breaks
+        int len = strlen(line);
+        if(len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
+
+        // find first occurence of #
+        char *hashPos = strchr(line, '#');
+        
+        if (hashPos) {
+            // separate left and right side
+            *hashPos = '\0';
+            fprintf(formattedProof, "%-*s %s\n", COLUMN_WIDTH, line, hashPos + 1);
+        } else {
+            fprintf(formattedProof, "%s\n", line);
+        }
+    }
+
+    fclose(parsedProof);
+    fclose(formattedProof);
 
     // TODO
-    // Each info uniformly right below each other
     // Infix notation
-    // Remove white spaces and unnecessary brackets
-// }
+}
 
 void decode() {
 
     preparse();
     refactor();
     parse();
-    // formatProof();
+    formatProof();
 
     // // debug
     // printf("++++ Type List ++++\n");
