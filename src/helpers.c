@@ -70,6 +70,23 @@ void printArgsStruct() {
     printf("    RESULT: %s\n", args -> result);
 }
 
+void printHashTable() {
+    struct hashTable *entry, *tmp;
+    
+    printf("==== Hash Table Entries ====\n");
+    
+    HASH_ITER(hh, table, entry, tmp) {
+        printf("Tag: %s\n", entry->tag);
+        printf("  Type:   %s\n", entry->line.type);
+        printf("  Rest:   %s\n", entry->line.rest);
+        printf("  Rule:   %s\n", entry->line.rule);
+        printf("  Prems:  %s\n", entry->line.prems);
+        printf("  Args:   %s\n", entry->line.args);
+        printf("  Note:   %s\n", entry->line.note);
+        printf("---------------------------\n");
+    }
+}
+
 void trimWhitespaces(char *str) {
     int len = strlen(str);
 

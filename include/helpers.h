@@ -89,6 +89,7 @@ void push(struct node** head, void* structure, int size);
 bool contains(const char *str, const char *substr);
 void setExecPermissions(char *path);
 void printArgsStruct();
+void printHashTable();
 void trimWhitespaces(char *str);
 bool startsWith(char *str, char *comp);
 char* stringCopy(char *src);

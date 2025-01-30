@@ -385,25 +385,46 @@ void parse() {
             continue;
         }
 
-        char *ptr = args;
+        char *ptrArgs = args;
 
         // check whether tags from older steps should be replaced in args
-        while ((ptr = strchr(ptr, '@')) != NULL) {
+        while ((ptrArgs = strchr(ptrArgs, '@')) != NULL) {
 
             char t[BUFFER_SIZE];
             struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
             int i = 0;
 
             // extract the tag from the rest
-            while (*ptr && *ptr != ' ' && *ptr != ')' && *ptr != ']' && i < sizeof(t) - 1) {
-                t[i++] = *ptr++;
+            while (*ptrArgs && *ptrArgs != ' ' && *ptrArgs != ')' && *ptrArgs != ']' && i < sizeof(t) - 1) {
+                t[i++] = *ptrArgs++;
             }
             t[i] = '\0';
 
             HASH_FIND_STR(table, t, match);
 
             if (match) { replaceAll(args, t, match->line.args); }
-            ptr++;
+            ptrArgs++;
+        }
+        
+        char *ptrPrems = prems;
+
+        // check whether tags from older steps should be replaced in prems
+        while ((ptrPrems = strchr(ptrPrems, '@')) != NULL) {
+
+            char t[BUFFER_SIZE];
+            struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
+            int i = 0;
+
+            // extract the tag from the rest
+            while (*ptrPrems && *ptrPrems != ' ' && *ptrPrems != ')' && *ptrPrems != ']' && i < sizeof(t) - 1) {
+                t[i++] = *ptrPrems++;
+            }
+            t[i] = '\0';
+
+            HASH_FIND_STR(table, t, match);
+
+            if (match) { replaceAll(prems, t, match->line.args); }
+            ptrPrems++;
         }
 
         do {
@@ -416,7 +437,6 @@ void parse() {
             simplify |= simplifyNotExists(args);
             simplify |= applyDeMorgansLaw(args);
         } while (simplify);
-
 
         // add the new entry to the hash table
         struct hashTable *entry;
@@ -491,5 +511,6 @@ void decode() {
     // printf("++++ Variable List ++++\n");
     // printVarList(varList);
     // printf("+++++++++++++++++++++++\n");
-
+        
+    printHashTable();
 }
