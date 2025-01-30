@@ -85,16 +85,16 @@ bool applyDeMorgansLaw(char* str) {
     bool replaced = false;
 
     // not(and(...))
-    replaced |= replaceAll(str, "not\\(and\\(([^)]+)\\s+([^)]+)\\)\\)", "or(not \\1 not \\2)");
+    replaced |= replaceAll(str, "not\\(and\\(([^)]+)\\s+([^)]+)\\)\\)", "or(not (\\1) not (\\2))");
 
     // not(or(...))
-    replaced |= replaceAll(str, "not\\(or\\(([^)]+)\\s+([^)]+)\\)\\)", "and(not \\1 not \\2)");
+    replaced |= replaceAll(str, "not\\(or\\(([^)]+)\\s+([^)]+)\\)\\)", "and(not (\\1) not (\\2))");
 
     return replaced;
 }
 
 bool simplifyImplication(char* str) {
-    return replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not \\1 \\2)");
+    return replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not (\\1) (\\2)");
 }
 
 bool simplifyNotExists(char* str) {
@@ -102,7 +102,10 @@ bool simplifyNotExists(char* str) {
 }
 
 bool simplifyNotForall(char* str) {
-    return replaceAll(str, NOTFORALL, EXISTSNOT);
+    bool modified = replaceAll(str, "not forall", "exists not");
+
+    modified |=  replaceAll(str, "\\(not \\(forall ([^ ]+) \\((.*)\\)\\)\\)", "(exists (\\1) not (\\2))");
+    return modified;
 }
 
 bool simplifyDoubleNeg(char* str) {
@@ -300,6 +303,7 @@ void parse() {
     FILE *refactoredProof, *parsedProof;
     char line[2*BUFFER_SIZE];
     char buf[8*BUFFER_SIZE];
+    bool simplify;
 
     // store file
     strncpy(args->out.parsed.file, args->out.raw.name, BUFFER_SIZE - 1);
@@ -401,6 +405,18 @@ void parse() {
             if (match) { replaceAll(args, t, match->line.args); }
             ptr++;
         }
+
+        do {
+            simplify = false;
+            simplify |= simplifyImplication(args);
+            simplify |= simplifyNotTrue(args);
+            simplify |= simplifyNotFalse(args);
+            simplify |= simplifyDoubleNeg(args);
+            simplify |= simplifyNotForall(args);
+            simplify |= simplifyNotExists(args);
+            simplify |= applyDeMorgansLaw(args);
+        } while (simplify);
+
 
         // add the new entry to the hash table
         struct hashTable *entry;
