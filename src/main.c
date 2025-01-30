@@ -8,6 +8,7 @@ struct type *types;
 struct var *vars;
 struct args *args;
 struct hashTable *table;
+struct dict *symbols;
 
 void runCvc5();
 
@@ -18,6 +19,7 @@ int main(int argc, char *argv[]) {
     memset(args, 0, sizeof(struct args));
 
     table = NULL;
+    symbols = NULL;
 
     extractCommandLineArgs(argc, argv);
 

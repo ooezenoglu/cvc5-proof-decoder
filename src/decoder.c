@@ -471,7 +471,6 @@ void parse() {
         fprintf(parsedProof, "%s", buf);
     }
 
-
     fclose(refactoredProof);
     fclose(parsedProof);
 }
@@ -516,6 +515,12 @@ void formatProof() {
             line[len - 1] = '\0';
         }
 
+        struct dict *entry, *tmp;
+        
+        HASH_ITER(hh, symbols, entry, tmp) {
+           replaceAll(line, entry->key, entry->val);
+        }
+
         // find first occurence of #
         char *hashPos = strchr(line, '#');
         
@@ -536,6 +541,13 @@ void formatProof() {
 }
 
 void decode() {
+
+    addSymbol("forall", "∀");
+    addSymbol("exists", "∃");
+    addSymbol("subset", "⊆");
+    addSymbol("not", "~");
+    addSymbol("or", "∨");
+    addSymbol("and", "∧");
 
     preparse();
     refactor();

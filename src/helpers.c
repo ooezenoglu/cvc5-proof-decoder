@@ -87,6 +87,14 @@ void printHashTable() {
     }
 }
 
+void addSymbol(char *key, char *value) {
+    struct dict *entry = (struct dict *) malloc(sizeof(struct dict));
+
+    strcpy(entry->key, key);
+    strcpy(entry->val, value);
+    HASH_ADD_STR(symbols, key, entry);
+}
+
 void trimWhitespaces(char *str) {
     int len = strlen(str);
 

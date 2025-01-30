@@ -80,6 +80,12 @@ struct hashTable {
     UT_hash_handle hh; // uthash structure
 };
 
+struct dict {
+    char key[BUFFER_SIZE];
+    char val[BUFFER_SIZE];
+    UT_hash_handle hh;
+};
+
 // linked list functions
 void printVarList(struct node *head);
 void printTypeList(struct node *head);
@@ -90,6 +96,7 @@ bool contains(const char *str, const char *substr);
 void setExecPermissions(char *path);
 void printArgsStruct();
 void printHashTable();
+void addSymbol(char *key, char *value);
 void trimWhitespaces(char *str);
 bool startsWith(char *str, char *comp);
 char* stringCopy(char *src);
@@ -99,6 +106,7 @@ int getIndexOfFileExtension(char *file);
 char *getFileExtension(char *file);
 void errNdie(char *msg);
 
+extern struct dict *symbols;
 extern struct hashTable *table;
 extern struct hashTable *entry;
 extern struct node *typeList;
