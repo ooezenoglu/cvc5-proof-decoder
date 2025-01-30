@@ -14,6 +14,7 @@
 #define FORALLNOT "forall not"
 #define IMPL "=>"
 
+void formatProof();
 char* generateTypeVar();
 bool replaceAll(char* str, char* pattern, char* replacement);
 bool applyDeMorgansLaw(char* str);

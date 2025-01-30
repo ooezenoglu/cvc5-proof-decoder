@@ -50,6 +50,7 @@ struct output {
     struct file preparsed;
     struct file refactored;
     struct file parsed;
+    struct file formatted;
 };
 
 struct args {
@@ -61,6 +62,7 @@ struct args {
     bool decode;
     char parserPath[BUFFER_SIZE];
     char cvc5Path[BUFFER_SIZE];
+    char result[BUFFER_SIZE];
 };
 
 struct line {
@@ -87,6 +89,7 @@ void push(struct node** head, void* structure, int size);
 bool contains(const char *str, const char *substr);
 void setExecPermissions(char *path);
 void printArgsStruct();
+void trimWhitespaces(char *str);
 bool startsWith(char *str, char *comp);
 char* stringCopy(char *src);
 bool isEqual(char *str1, char *str2);

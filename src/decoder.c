@@ -219,7 +219,8 @@ void refactor() {
         replaceAll(line, "tptp.", "");
         
         // @list -> []
-        replaceAll(line, "@list\\s*([A-Za-z0-9_@]+)", "[\\1]");
+        // replaceAll(line, "@list\\s*([A-Za-z0-9_@]+)", "[\\1]");
+        replaceAll(line, "@list", "");
 
         // remove special characters and extra spaces
         replaceAll(line, "\\$+", "");
@@ -298,6 +299,7 @@ void parse() {
 
     FILE *refactoredProof, *parsedProof;
     char line[2*BUFFER_SIZE];
+    char buf[8*BUFFER_SIZE];
 
     // store file
     strncpy(args->out.parsed.file, args->out.raw.name, BUFFER_SIZE - 1);
@@ -373,20 +375,11 @@ void parse() {
             } else {
                 sscanf(rest, "%*[^:]:rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
             }
-        
+
         } else { // type unknown; copy what's there
             fprintf(parsedProof, "%s\n", line);
             continue;
         }
-
-        // printf("Tag: %s\n", tag);
-        // printf("Type: %s\n", type);
-        // printf("Rest: %s\n", rest);
-        // printf("Rule: %s\n", rule);
-        // printf("Prems: %s\n", prems);
-        // printf("Args: %s\n", args);
-        // printf("Note: %s\n", args);
-        // printf("\n");
 
         char *ptr = args;
 
@@ -403,7 +396,6 @@ void parse() {
             }
             t[i] = '\0';
 
-            // printf("Searching for tag: '%s'\n", t);
             HASH_FIND_STR(table, t, match);
 
             if (match) { replaceAll(args, t, match->line.args); }
@@ -423,34 +415,65 @@ void parse() {
         strcpy(entry->line.note, note);
         HASH_ADD_STR(table, tag, entry);
 
-        // // debug: show all elements in the hash table
-        // struct hashTable *current = (struct hashTable *) malloc(sizeof(struct hashTable));
-        // printf("\n++++ Hash table entries ++++\n");
-        // HASH_ITER(hh, table, current, entry) {
-        //     printf("Tag: %s, Type: %s, Rest: %s, Rule: %s, Prems: %s, Args: %s, Note: %s\n", 
-        //     current->tag, current->line.type, current->line.rest, current->line.rule, 
-        //     current->line.prems, current->line.args, current->line.note);
-        // }
-        // printf("+++++++++++++++\n\n");
+        snprintf(
+            buf, 
+            sizeof(buf),
+            "%s %s %s (%s, %s %s)\n",
+            type, args, note, tag, 
+            rule, prems
+        );
 
-        // TODO format ouput
+        trimWhitespaces(buf);
 
-        fprintf(parsedProof, "%s %s %s (%s, %s %s)\n", type, args, note, tag, rule, prems);
+        printf("%s\n", buf);
+        fprintf(parsedProof, "%s", buf);
     }
 }
+
+// void formatProof() {
+
+//     struct hashTable *current, *tmp;
+//     char line[8*BUFFER_SIZE];
+//     FILE *parsedProof, *formattedProof;
+
+//     // store file
+//     strncpy(args->out.formatted.file, args->out.raw.name, BUFFER_SIZE - 1);
+//     strcat(args->out.formatted.file, "_formatted.txt");
+//     args->out.formatted.file[BUFFER_SIZE - 1] = '\0';
+
+//     // store file name
+//     strncpy(args->out.formatted.name, removeFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
+//     args->out.formatted.name[BUFFER_SIZE - 1] = '\0';
+
+//     // store file extension
+//     strncpy(args->out.formatted.extension, getFileExtension(args->out.formatted.file), BUFFER_SIZE - 1);
+//     args->out.formatted.extension[BUFFER_SIZE - 1] = '\0';
+    
+//     parsedProof = fopen(args->out.parsed.file, "r+");
+//     formattedProof = fopen(args->out.formatted.file, "w+");
+
+//     if(!parsedProof) { errNdie("Could not open parsed proof file"); }
+//     if(!formattedProof) { errNdie("Could not create formatted proof file"); }
+
+    // TODO
+    // Each info uniformly right below each other
+    // Infix notation
+    // Remove white spaces and unnecessary brackets
+// }
 
 void decode() {
 
     preparse();
     refactor();
     parse();
+    // formatProof();
 
-    // debug
-    printf("++++ Type List ++++\n");
-    printTypeList(typeList);
-    printf("+++++++++++++++++++\n");
-    printf("++++ Variable List ++++\n");
-    printVarList(varList);
-    printf("+++++++++++++++++++++++\n");
+    // // debug
+    // printf("++++ Type List ++++\n");
+    // printTypeList(typeList);
+    // printf("+++++++++++++++++++\n");
+    // printf("++++ Variable List ++++\n");
+    // printVarList(varList);
+    // printf("+++++++++++++++++++++++\n");
 
 }

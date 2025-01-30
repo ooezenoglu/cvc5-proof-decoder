@@ -37,6 +37,16 @@ int main(int argc, char *argv[]) {
     }
 
     if(args -> decode == 1) {
+
+        FILE *proof = fopen(args->out.raw.file, "r+");
+    
+        if (fgets(args->result, sizeof(args->result), proof)) {
+            // remove line break if it exists
+            args->result[strcspn(args->result, "\n")] = '\0';
+        }
+
+        // TODO error handling
+        
         decode();
     }
 

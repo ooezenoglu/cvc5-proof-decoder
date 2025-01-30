@@ -54,6 +54,10 @@ void printArgsStruct() {
     printf("        FILE: %s\n", args->out.parsed.file);
     printf("        NAME: %s\n", args->out.parsed.name);
     printf("        EXTENSION: %s\n", args->out.parsed.extension);
+    printf("     FORMATTED:\n");
+    printf("        FILE: %s\n", args->out.formatted.file);
+    printf("        NAME: %s\n", args->out.formatted.name);
+    printf("        EXTENSION: %s\n", args->out.formatted.extension);
     printf("++++ OPTIONS ++++\n");
     printf("    PARSE: %i\n", args -> parse);
     printf("    SIMPLIFY: %i\n", args -> simplify);
@@ -62,6 +66,50 @@ void printArgsStruct() {
     printf("++++ PATHS ++++\n");
     printf("    PARSER PATH: %s\n", args -> parserPath);
     printf("    CVC5 PATH: %s\n", args -> cvc5Path);
+    printf("++++ RESULT ++++\n");
+    printf("    RESULT: %s\n", args -> result);
+}
+
+void trimWhitespaces(char *str) {
+    int len = strlen(str);
+
+    // remove trailing spaces
+    while (len > 0 && str[len - 1] == ' ') {
+        str[len - 1] = '\0';
+        len--;
+    }
+
+    // remove leading spaces
+    char *start = str;
+    while (*start == ' ' && *start != '\0') {
+        start++;
+    }
+
+    // shift string to remove leading spaces
+    if (start != str) {
+        int i = 0;
+        while (start[i] != '\0') {
+            str[i] = start[i];
+            i++;
+        }
+        str[i] = '\0'; // null termination
+    }
+
+    // melt multiple spaces within the string 
+    char *src = str, *dest = str;
+    int space = 0;
+
+    while (*src != '\0') {
+        if (*src != ' ') {
+            *dest++ = *src;
+            space = 0;
+        } else if (!space) {
+            *dest++ = ' '; // single space
+            space = 1;
+        }
+        src++;
+    }
+    *dest = '\0'; // null termination
 }
 
 bool startsWith(char *str, char *comp) {
