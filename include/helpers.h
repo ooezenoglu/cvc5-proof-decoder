@@ -9,6 +9,11 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <regex.h>
+#include <ctype.h>
+#include <wchar.h>
+#include <stdlib.h>
+#include <locale.h>
+#include <wctype.h>
 #include "uthash.h"
 #include "rules.h"
 #include "decoder.h"

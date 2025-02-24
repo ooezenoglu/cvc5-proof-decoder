@@ -13,7 +13,7 @@ bool applyDeMorgansLaw(char* str) {
 }
 
 bool simplifyImplication(char* str) {
-    return replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not (\\1) (\\2)");
+    return replaceAll(str, "=>\\s*([A-Za-z0-9_@]+)\\s+([A-Za-z0-9_@]+)", "or(not (\\1) (\\2))");
 }
 
 bool simplifyNotExists(char* str) {

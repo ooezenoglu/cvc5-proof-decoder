@@ -4,7 +4,63 @@
 char *typeVariables[] = {"u", "m", "n", "p", "q"};
 #define TYPEVARS_LENGTH (sizeof(typeVariables) / sizeof(char*))
 
+void removeDuplicateBrackets(char *str) {
+
+    bool changed = true;
+
+    while (changed) {
+
+        changed = false;
+        int len = strlen(str);
+
+        // iterate over string
+        for (int i = 0; i < len - 1; i++) {
+            if (str[i] == '(' && str[i + 1] == '(') {
+                int depth = 1;
+                int j = i + 2;
+                // find matching closing bracket
+                while (j < len && depth > 0) {
+                    if (str[j] == '(')
+                        depth++;
+                    else if (str[j] == ')')
+                        depth--;
+                    j++;
+                }
+
+                // if pattern (( ... )) found, remove duplicate brackets
+                if (depth == 0 && j < len && str[j] == ')') {
+                    char temp[BUFFER_SIZE];
+                    int pos = 0;
+                    for (int k = 0; k <= i; k++)
+                        temp[pos++] = str[k];
+                    for (int k = i + 2; k < j; k++)
+                        temp[pos++] = str[k];
+                    for (int k = j + 1; k < len; k++)
+                        temp[pos++] = str[k];
+                    temp[pos] = '\0';
+                    strncpy(str, temp, BUFFER_SIZE);
+                    str[BUFFER_SIZE - 1] = '\0';
+                    changed = true;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void cleanString(char *str) {
+
+    // remove unnecessary whitespace in brackets
+    replaceAll(str, "\\(\\s*\\)", "");
+    replaceAll(str, "\\(\\s+", "(");
+    replaceAll(str, "\\s+\\)", ")");
+    replaceAll(str, "\\(\\)", "");
+
+    trimWhitespaces(str);
+}
+
 char* generateTypeVar() {
+    
     static int i = 0;
 
     if (i >= TYPEVARS_LENGTH) {
@@ -305,7 +361,20 @@ void parse() {
             if (match) { replaceAll(args, t, match->line.args); }
             ptrArgs++;
         }
-        
+
+        do {
+            simplify = false;
+            simplify |= simplifyImplication(args);
+            simplify |= simplifyNotTrue(args);
+            simplify |= simplifyNotFalse(args);
+            simplify |= simplifyDoubleNeg(args);
+            simplify |= simplifyNotForall(args);
+            simplify |= simplifyNotExists(args);
+            simplify |= applyDeMorgansLaw(args);
+        } while (simplify);
+
+        removeDuplicateBrackets(args);
+
         char *ptrPrems = prems;
 
         // check whether tags from older steps should be replaced in prems
@@ -326,17 +395,14 @@ void parse() {
             if (match) { replaceAll(prems, t, match->line.args); }
             ptrPrems++;
         }
-
-        do {
-            simplify = false;
-            simplify |= simplifyImplication(args);
-            simplify |= simplifyNotTrue(args);
-            simplify |= simplifyNotFalse(args);
-            simplify |= simplifyDoubleNeg(args);
-            simplify |= simplifyNotForall(args);
-            simplify |= simplifyNotExists(args);
-            simplify |= applyDeMorgansLaw(args);
-        } while (simplify);
+        
+        cleanString(type);
+        cleanString(tag);
+        cleanString(rest);
+        cleanString(rule);
+        cleanString(prems);
+        cleanString(args);
+        cleanString(note);
 
         // add the new entry to the hash table
         struct hashTable *entry;
@@ -354,20 +420,13 @@ void parse() {
         snprintf(
             buf, 
             sizeof(buf),
-            "%s %s %s #(%s %s)\n",
+            "%s %s %s (%s %s)\n",
             type, args, note, 
             rule, prems
         );
 
-        // remove unnecessary whitespace in brackets
-        replaceAll(buf, "\\(\\s*\\)", "");
-        replaceAll(buf, "\\(\\s+", "(");
-        replaceAll(buf, "\\s+\\)", ")");
-        replaceAll(buf, "\\(\\)", "");
+        cleanString(buf);
 
-        trimWhitespaces(buf);
-
-        printf("%s\n", buf);
         fprintf(parsedProof, "%s", buf);
     }
 
@@ -377,57 +436,57 @@ void parse() {
 
 void formatProof() {
 
-    char line[8*BUFFER_SIZE];
-    FILE *parsedProof, *formattedProof;
+    int maxLength = 0;
+    importSymbols();
+    struct hashTable *entry, *tmp;
+    FILE *formattedProof = fopen(args->out.formatted.file, "w+");
 
-    parsedProof = fopen(args->out.parsed.file, "r+");
-    formattedProof = fopen(args->out.formatted.file, "w+");
+    // first run: find max length of main part
+    HASH_ITER(hh, table, entry, tmp) {
 
-    if(!parsedProof) { errNdie("Could not open parsed proof file"); }
-    if(!formattedProof) { errNdie("Could not create formatted proof file"); }
+        char mainStr[4 * BUFFER_SIZE];
 
-    // fixed column width for lhs
-    int COLUMN_WIDTH = 80;
+        snprintf(mainStr, sizeof(mainStr), "%s %s %s",
+                 entry->line.type, entry->line.args, entry->line.note);
 
-    while(1) {
+        replaceAll(mainStr, "\\(\\s*\\)", "");
+        replaceAll(mainStr, "\\(\\s+", "(");
+        replaceAll(mainStr, "\\s+\\)", ")");
+        replaceAll(mainStr, "\\(\\)", "");
+        trimWhitespaces(mainStr);
 
-        // read line
-        if(!fgets(line, sizeof(line), parsedProof)) {
-            break; // end of file
-        }
-
-        // remove line breaks
-        int len = strlen(line);
-        if(len > 0 && line[len - 1] == '\n') {
-            line[len - 1] = '\0';
-        }
-
-        importSymbols();
-
-        struct dict *entry, *tmp;
-        
-        // iteratively replace symbols from the dict
-        HASH_ITER(hh, symbs, entry, tmp) {
-           replaceAll(line, entry->key, entry->val);
-        }
-
-        // find first occurence of #
-        char *hashPos = strchr(line, '#');
-        
-        if (hashPos) {
-            // separate left and right side
-            *hashPos = '\0';
-            fprintf(formattedProof, "%-*s %s\n", COLUMN_WIDTH, line, hashPos + 1);
-        } else {
-            fprintf(formattedProof, "%s\n", line);
+        int len = strlen(mainStr);
+        if (len > maxLength) {
+            maxLength = len;
         }
     }
+    
+    // second run: print formatted lines
+    HASH_ITER(hh, table, entry, tmp) {
+        char mainStr[4 * BUFFER_SIZE];
+        char parenStr[4 * BUFFER_SIZE];
+        char finalStr[8 * BUFFER_SIZE];
+        snprintf(mainStr, sizeof(mainStr), "%s %s %s",
+                 entry->line.type, entry->line.args, entry->line.note);
+        replaceAll(mainStr, "\\(\\s*\\)", "");
+        replaceAll(mainStr, "\\(\\s+", "(");
+        replaceAll(mainStr, "\\s+\\)", ")");
+        replaceAll(mainStr, "\\(\\)", "");
+        trimWhitespaces(mainStr);
 
-    fclose(parsedProof);
+        snprintf(parenStr, sizeof(parenStr), "(%s %s)",
+                 entry->line.rule, entry->line.prems);
+
+        int padding = (maxLength + 10) - strlen(mainStr);
+        if (padding < 0) {
+            padding = 0;
+        }
+        snprintf(finalStr, sizeof(finalStr), "%s%*s%s", mainStr, padding, "", parenStr);
+        printf("%s\n", finalStr);
+        fprintf(formattedProof, "%s\n", finalStr);
+    }
+
     fclose(formattedProof);
-
-    // TODO
-    // Infix notation
 }
 
 void decode() {
