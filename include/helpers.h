@@ -17,7 +17,6 @@
 #include "uthash.h"
 #include "rules.h"
 #include "decoder.h"
-#include "symbols.h"
 
 #define BUFFER_SIZE 256
 #define SMT2 "smt2"
