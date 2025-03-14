@@ -1,8 +1,31 @@
 #include "../include/decoder.h"
+#include "../include/parse_util.h"
 
-// TODO extend list
-char *typeVariables[] = {"u", "m", "n", "p", "q"};
+char *typeVariables[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
 #define TYPEVARS_LENGTH (sizeof(typeVariables) / sizeof(char*))
+
+void adjustBrackets(char *str) {
+    int len = strlen(str);
+    char temp[BUFFER_SIZE];
+
+    // wrap brackets around the string if not done already 
+    if (len == 0 || str[0] != '(' || str[len - 1] != ')') {
+        snprintf(temp, BUFFER_SIZE, "(%s)", str);
+        strncpy(str, temp, BUFFER_SIZE - 1);
+        str[BUFFER_SIZE - 1] = '\0';
+        len = strlen(str);
+    }
+
+    // remove duplicate brackets ((...))
+    if (len >= 4 && str[0] == '(' && str[1] == '(' &&
+        str[len - 2] == ')' && str[len - 1] == ')') {
+        // copy content between first and last bracket
+        strncpy(temp, str + 1, len - 2);
+        temp[len - 2] = '\0';
+        strncpy(str, temp, BUFFER_SIZE - 1);
+        str[BUFFER_SIZE - 1] = '\0';
+    }
+}
 
 void removeDuplicateBrackets(char *str) {
 
@@ -141,7 +164,6 @@ void preparse() {
 
     FILE *proof, *preparsedProof;
     char line[2*BUFFER_SIZE];
-    bool simplify;
 
     proof = fopen(args->out.raw.file, "r+");
     preparsedProof = fopen(args->out.preparsed.file, "w+");
@@ -164,16 +186,16 @@ void preparse() {
 
         // the whole proof has to be preparsed again
         // if at least one simplification took place
-        do {
-            simplify = false;
-            simplify |= simplifyImplication(line);
-            simplify |= simplifyNotTrue(line);
-            simplify |= simplifyNotFalse(line);
-            simplify |= simplifyDoubleNeg(line);
-            simplify |= simplifyNotForall(line);
-            simplify |= simplifyNotExists(line);
-            simplify |= applyDeMorgansLaw(line);
-        } while (simplify);
+        // do {
+        //     simplify = false;
+        //     simplify |= simplifyImplication(line);
+        //     simplify |= simplifyNotTrue(line);
+        //     simplify |= simplifyNotFalse(line);
+        //     simplify |= simplifyDoubleNeg(line);
+        //     simplify |= simplifyNotForall(line);
+        //     simplify |= simplifyNotExists(line);
+        //     simplify |= applyDeMorgansLaw(line);
+        // } while (simplify);
 
         fprintf(preparsedProof, "%s\n", line);
     }
@@ -272,7 +294,7 @@ void parse() {
     FILE *refactoredProof, *parsedProof;
     char line[2*BUFFER_SIZE];
     char buf[8*BUFFER_SIZE];
-    bool simplify;
+    // bool simplify;
 
     refactoredProof = fopen(args->out.refactored.file, "r+");
     parsedProof = fopen(args->out.parsed.file, "w+");
@@ -316,7 +338,7 @@ void parse() {
             sscanf(rest, "%s %[^\n]", args, note);
         
         } else if (isEqual(type, "declare-const") ) {
-            sscanf(rest, "%s %[^\n]", args, note);
+            sscanf(rest, "%[^ (] %[^\n]", args, note);
         
         } else if (isEqual(type, "define")) {
             if(contains(rest, "eo::var")) {
@@ -341,10 +363,12 @@ void parse() {
             continue;
         }
 
+        adjustBrackets(args);
+
         char *ptrArgs = args;
 
         // check whether tags from older steps should be replaced in args
-        while ((ptrArgs = strchr(ptrArgs, '@')) != NULL) {
+        while ((ptrArgs = strchr(ptrArgs, '@'))) {
 
             char t[BUFFER_SIZE];
             struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
@@ -362,18 +386,44 @@ void parse() {
             ptrArgs++;
         }
 
-        do {
-            simplify = false;
-            simplify |= simplifyImplication(args);
-            simplify |= simplifyNotTrue(args);
-            simplify |= simplifyNotFalse(args);
-            simplify |= simplifyDoubleNeg(args);
-            simplify |= simplifyNotForall(args);
-            simplify |= simplifyNotExists(args);
-            simplify |= applyDeMorgansLaw(args);
-        } while (simplify);
-
         removeDuplicateBrackets(args);
+
+        if (!startsWith(type, "declare") && strlen(args) > 0) {
+            char simplifiedExpr[8*BUFFER_SIZE];
+            
+            result_ast = NULL;  // reset AST
+
+            // scan the string to the lexer
+            yy_scan_string(args);
+
+            // call the parser and store resulting string 
+            // simplified string is stored in global result_ast
+            yyparse();
+        
+            // result is NULL if there is no AST
+            if (result_ast != NULL) {
+                memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
+                ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
+    
+                if (strcmp(simplifiedExpr, "null") != 0) {
+                    strcpy(args, simplifiedExpr);
+                    printf("SIMPLIFIED: %s\n", args);
+                }
+            }
+        }
+        
+        // do {
+        //     simplify = false;
+        //     simplify |= simplifyImplication(args);
+        //     simplify |= simplifyNotTrue(args);
+        //     simplify |= simplifyNotFalse(args);
+        //     simplify |= simplifyDoubleNeg(args);
+        //     simplify |= simplifyNotForall(args);
+        //     simplify |= simplifyNotExists(args);
+        //     simplify |= applyDeMorgansLaw(args);
+        // } while (simplify);
+
+        // removeDuplicateBrackets(args);
 
         char *ptrPrems = prems;
 
@@ -477,6 +527,8 @@ void formatProof() {
         snprintf(parenStr, sizeof(parenStr), "(%s %s)",
                  entry->line.rule, entry->line.prems);
 
+        cleanString(parenStr);
+
         int padding = (maxLength + 10) - strlen(mainStr);
         if (padding < 0) {
             padding = 0;
@@ -491,9 +543,11 @@ void formatProof() {
 
 void decode() {
 
-    preparse();
+    // preparse();
     refactor();
     parse();
+    printHashTable();
+
     formatProof();
 
     // debug
