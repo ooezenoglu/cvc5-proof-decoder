@@ -9,7 +9,6 @@ struct type *types;
 struct var *vars;
 struct args *args;
 struct hashTable *table;
-struct dict *symbs;
 
 // declare Flex functions
 extern int yyparse(void);
@@ -24,7 +23,6 @@ int main(int argc, char *argv[]) {
     memset(args, 0, sizeof(struct args));
 
     table = NULL;
-    symbs = NULL;
 
     extractCommandLineArgs(argc, argv);
 
@@ -47,6 +45,10 @@ int main(int argc, char *argv[]) {
             args->result[strcspn(args->result, "\n")] = '\0';
         }
 
+        if(!isEqual(args->result, "unsat")) {
+            errNdie("The input problem is not unsat");
+        }
+
         // set up output files
         generateOutputFile(args->out.refactored.file, args->out.raw.name, "_refactored.txt");
         generateOutputFile(args->out.parsed.file, args->out.raw.name, "_parsed.txt");
@@ -54,7 +56,6 @@ int main(int argc, char *argv[]) {
 
         // TODO error handling
         
-        printArgsStruct();
         decode();
 
         char simplifiedExpr[8*BUFFER_SIZE];
