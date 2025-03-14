@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
         // set up output files
         generateOutputFile(args->out.refactored.file, args->out.raw.name, "_refactored.txt");
         generateOutputFile(args->out.parsed.file, args->out.raw.name, "_parsed.txt");
+        generateOutputFile(args->out.simplified.file, args->out.raw.name, "_simplified.txt");
         generateOutputFile(args->out.formatted.file, args->out.raw.name, "_formatted.txt");
 
         // TODO error handling

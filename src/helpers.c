@@ -54,6 +54,10 @@ void printArgsStruct() {
     printf("        FILE: %s\n", args->out.parsed.file);
     printf("        NAME: %s\n", args->out.parsed.name);
     printf("        EXTENSION: %s\n", args->out.parsed.extension);
+    printf("     SIMPLIFIED:\n");
+    printf("        FILE: %s\n", args->out.simplified.file);
+    printf("        NAME: %s\n", args->out.simplified.name);
+    printf("        EXTENSION: %s\n", args->out.simplified.extension);
     printf("     FORMATTED:\n");
     printf("        FILE: %s\n", args->out.formatted.file);
     printf("        NAME: %s\n", args->out.formatted.name);
@@ -79,8 +83,8 @@ void printHashTable() {
         printf("  Type:   %s\n", entry->line.type);
         printf("  Rest:   %s\n", entry->line.rest);
         printf("  Rule:   %s\n", entry->line.rule);
-        printf("  Prems:  %s\n", entry->line.prems);
-        printf("  Args:   %s\n", entry->line.args);
+        printf("  Prems:  %s\n", entry->line.prems.orig);
+        printf("  Args:   %s\n", entry->line.args.orig);
         printf("  Note:   %s\n", entry->line.note);
         printf("---------------------------\n");
     }

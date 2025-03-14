@@ -247,16 +247,18 @@ void refactor() {
 
 void parse() {
 
-    FILE *refactoredProof, *parsedProof;
+    FILE *refactoredProof, *parsedProof, *simplifiedProof;
     char line[2*BUFFER_SIZE];
     char buf[8*BUFFER_SIZE];
-    // bool simplify;
+    char sbuf[8*BUFFER_SIZE];
 
     refactoredProof = fopen(args->out.refactored.file, "r+");
     parsedProof = fopen(args->out.parsed.file, "w+");
+    simplifiedProof = fopen(args->out.simplified.file, "w+");
 
     if(!refactoredProof) { errNdie("Could not open refactored proof file"); }
-    if(!parsedProof) { errNdie("Could not create parsed proof file"); }
+    if(!parsedProof) { errNdie("Could not open parsed proof file"); }
+    if(!simplifiedProof) { errNdie("Could not create simplified proof file"); }
 
     while(1) {
 
@@ -276,7 +278,9 @@ void parse() {
         char rest[BUFFER_SIZE] = {0};
         char rule[BUFFER_SIZE] = {0};
         char prems[BUFFER_SIZE] = {0};
+        char sprems[BUFFER_SIZE] = {0};
         char args[BUFFER_SIZE] = {0};
+        char sargs[BUFFER_SIZE] = {0};
         char note[BUFFER_SIZE] = {0};
 
         // extract tag
@@ -316,6 +320,7 @@ void parse() {
 
         } else { // type unknown; copy what's there
             fprintf(parsedProof, "%s\n", line);
+            fprintf(simplifiedProof, "%s\n", line);
             continue;
         }
 
@@ -338,19 +343,21 @@ void parse() {
 
             HASH_FIND_STR(table, t, match);
 
-            if (match) { replaceAll(args, t, match->line.args); }
+            if (match) { replaceAll(args, t, match->line.args.orig); }
             ptrArgs++;
         }
 
         removeDuplicateBrackets(args);
 
-        if (!startsWith(type, "declare") && strlen(args) > 0) {
+        strcpy(sargs, args);
+
+        if (!startsWith(type, "declare") && strlen(sargs) > 0) {
             char simplifiedExpr[8*BUFFER_SIZE];
             
             result_ast = NULL;  // reset AST
 
             // scan the string to the lexer
-            yy_scan_string(args);
+            yy_scan_string(sargs);
 
             // call the parser and store resulting string 
             // simplified string is stored in global result_ast
@@ -362,13 +369,14 @@ void parse() {
                 ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
     
                 if (strcmp(simplifiedExpr, "null") != 0) {
-                    strcpy(args, simplifiedExpr);
-                    printf("SIMPLIFIED: %s\n", args);
+                    strcpy(sargs, simplifiedExpr);
+                    printf("SIMPLIFIED: %s\n", sargs);
                 }
             }
         }
 
         char *ptrPrems = prems;
+        strcpy(sprems, prems);
 
         // check whether tags from older steps should be replaced in prems
         while ((ptrPrems = strchr(ptrPrems, '@')) != NULL) {
@@ -385,7 +393,10 @@ void parse() {
 
             HASH_FIND_STR(table, t, match);
 
-            if (match) { replaceAll(prems, t, match->line.args); }
+            if (match) { 
+                replaceAll(prems, t, match->line.args.orig); 
+                replaceAll(sprems, t, match->line.args.simplified); 
+            }
             ptrPrems++;
         }
         
@@ -394,7 +405,9 @@ void parse() {
         cleanString(rest);
         cleanString(rule);
         cleanString(prems);
+        cleanString(sprems);
         cleanString(args);
+        cleanString(sargs);
         cleanString(note);
 
         // add the new entry to the hash table
@@ -405,26 +418,25 @@ void parse() {
         strcpy(entry->line.type, type);
         strcpy(entry->line.rest, rest);
         strcpy(entry->line.rule, rule);
-        strcpy(entry->line.prems, prems);
-        strcpy(entry->line.args, args);
+        strcpy(entry->line.prems.simplified, sprems);
+        strcpy(entry->line.prems.orig, prems);
+        strcpy(entry->line.args.orig, args);
+        strcpy(entry->line.args.simplified, sargs);
         strcpy(entry->line.note, note);
         HASH_ADD_STR(table, tag, entry);
 
-        snprintf(
-            buf, 
-            sizeof(buf),
-            "%s %s %s (%s %s)\n",
-            type, args, note, 
-            rule, prems
-        );
-
+        snprintf(buf, sizeof(buf), "%s %s %s (%s %s)\n", type, args, note, rule, prems);
         cleanString(buf);
-
         fprintf(parsedProof, "%s", buf);
+
+        snprintf(sbuf, sizeof(sbuf), "%s %s %s (%s %s)\n", type, sargs, note, rule, sprems);
+        cleanString(sbuf);
+        fprintf(simplifiedProof, "%s", sbuf);
     }
 
     fclose(refactoredProof);
     fclose(parsedProof);
+    fclose(simplifiedProof);
 }
 
 void formatProof() {
@@ -439,7 +451,7 @@ void formatProof() {
         char mainStr[4 * BUFFER_SIZE];
 
         snprintf(mainStr, sizeof(mainStr), "%s %s %s",
-                 entry->line.type, entry->line.args, entry->line.note);
+                 entry->line.type, entry->line.args.simplified, entry->line.note);
 
         replaceAll(mainStr, "\\(\\s*\\)", "");
         replaceAll(mainStr, "\\(\\s+", "(");
@@ -459,7 +471,7 @@ void formatProof() {
         char parenStr[4 * BUFFER_SIZE];
         char finalStr[8 * BUFFER_SIZE];
         snprintf(mainStr, sizeof(mainStr), "%s %s %s",
-                 entry->line.type, entry->line.args, entry->line.note);
+                 entry->line.type, entry->line.args.simplified, entry->line.note);
         replaceAll(mainStr, "\\(\\s*\\)", "");
         replaceAll(mainStr, "\\(\\s+", "(");
         replaceAll(mainStr, "\\s+\\)", ")");
@@ -467,7 +479,7 @@ void formatProof() {
         trimWhitespaces(mainStr);
 
         snprintf(parenStr, sizeof(parenStr), "(%s %s)",
-                 entry->line.rule, entry->line.prems);
+                 entry->line.rule, entry->line.prems.simplified);
 
         cleanString(parenStr);
 

@@ -66,6 +66,7 @@ struct output {
     struct file raw;
     struct file refactored;
     struct file parsed;
+    struct file simplified;
     struct file formatted;
 };
 
@@ -80,12 +81,17 @@ struct args {
     char result[BUFFER_SIZE];
 };
 
+struct style {
+    char orig[BUFFER_SIZE];
+    char simplified[BUFFER_SIZE];
+};
+
 struct line {
     char type[BUFFER_SIZE];
     char rest[BUFFER_SIZE];
     char rule[BUFFER_SIZE];
-    char prems[BUFFER_SIZE];
-    char args[BUFFER_SIZE];
+    struct style prems;
+    struct style args;
     char note[BUFFER_SIZE];
 };
 
