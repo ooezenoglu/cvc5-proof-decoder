@@ -1,6 +1,9 @@
 #include "../include/helpers.h"
 #include "../include/encoder.h"
 #include "../include/decoder.h"
+#include "../include/parse_util.h"
+
+// #include "../include/parser.tab.h"
 
 struct node *typeList;
 struct node *varList;
@@ -9,6 +12,12 @@ struct var *vars;
 struct args *args;
 struct hashTable *table;
 struct dict *symbs;
+
+// #include "parser.tab.h"
+
+// declare Flex functions
+extern int yyparse(void);
+extern void yy_scan_string(const char*);
 
 void runCvc5();
 
@@ -55,7 +64,41 @@ int main(int argc, char *argv[]) {
 
         // TODO error handling
         
+        printArgsStruct();
         decode();
+
+        char simplifiedExpr[8*BUFFER_SIZE];
+
+        const char *tests[] = {
+            "(=> (A) (B))",
+            "(=> (subset (A) (A)) (subset (A) (A)))",
+            "(not (not (A)))",
+            "(not (not (not (not (A)))))",
+            "(not (=> (A) (B)))",
+            "(not (not (not (=> (S) (k)))))",
+            "(not (forall (A) (=> (A) (B))))",
+            "(not (and (A) (B)))",            
+            "(not (or (A) (B)))",            
+            "(not (forall (x) (A)))",            
+            "(not (exists (x) (A)))",
+            "(not (and (=> (A) (B)) (not (not (C)))))",
+            "(= (A) (B))",            
+            "((A))",
+            "(forall (A) (=> (A) (B)))",
+            "(not (forall (A) (=> (and (Z) (X)) (B))))"
+        };
+        
+        int numTests = sizeof(tests) / sizeof(tests[0]);
+        
+        for (int i = 0; i < numTests; i++) {
+            printf("Orig string: %s\n", tests[i]);
+            yy_scan_string(tests[i]);
+            yyparse();
+            memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
+            ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
+            printf("New string: %s\n\n", simplifiedExpr);
+        }
+        
     }
 
     // debug
