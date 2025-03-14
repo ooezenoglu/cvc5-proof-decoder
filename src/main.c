@@ -3,8 +3,6 @@
 #include "../include/decoder.h"
 #include "../include/parse_util.h"
 
-// #include "../include/parser.tab.h"
-
 struct node *typeList;
 struct node *varList;
 struct type *types;
@@ -12,8 +10,6 @@ struct var *vars;
 struct args *args;
 struct hashTable *table;
 struct dict *symbs;
-
-// #include "parser.tab.h"
 
 // declare Flex functions
 extern int yyparse(void);
@@ -52,7 +48,6 @@ int main(int argc, char *argv[]) {
         }
 
         // set up output files
-        generateOutputFile(args->out.preparsed.file, args->out.raw.name, "_preparsed.txt");
         generateOutputFile(args->out.refactored.file, args->out.raw.name, "_refactored.txt");
         generateOutputFile(args->out.parsed.file, args->out.raw.name, "_parsed.txt");
         generateOutputFile(args->out.formatted.file, args->out.raw.name, "_formatted.txt");

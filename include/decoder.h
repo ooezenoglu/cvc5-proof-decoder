@@ -7,7 +7,6 @@ void removeDuplicateBrackets(char *str);
 void cleanString(char *str);
 char* generateTypeVar();
 bool replaceAll(char* str, char* pattern, char* replacement);
-void preparse();
 void refactor();
 void parse();
 void formatProof();

@@ -64,7 +64,6 @@ struct input {
 
 struct output {
     struct file raw;
-    struct file preparsed;
     struct file refactored;
     struct file parsed;
     struct file formatted;

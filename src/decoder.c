@@ -160,65 +160,21 @@ bool replaceAll(char* str, char* pattern, char* replacement) {
     return matched;
 }
 
-void preparse() {
-
-    FILE *proof, *preparsedProof;
-    char line[2*BUFFER_SIZE];
-
-    proof = fopen(args->out.raw.file, "r+");
-    preparsedProof = fopen(args->out.preparsed.file, "w+");
-
-    if(!proof) { errNdie("Could not open proof file"); }
-    if(!preparsedProof) { errNdie("Could not create preparsed proof file"); }
-
-    while(1) {
-
-        // read line
-        if(!fgets(line, sizeof(line), proof)) {
-            break; // end of file
-        }
-
-        // remove line breaks
-        int len = strlen(line);
-        if(len > 0 && line[len - 1] == '\n') {
-            line[len - 1] = '\0';
-        }
-
-        // the whole proof has to be preparsed again
-        // if at least one simplification took place
-        // do {
-        //     simplify = false;
-        //     simplify |= simplifyImplication(line);
-        //     simplify |= simplifyNotTrue(line);
-        //     simplify |= simplifyNotFalse(line);
-        //     simplify |= simplifyDoubleNeg(line);
-        //     simplify |= simplifyNotForall(line);
-        //     simplify |= simplifyNotExists(line);
-        //     simplify |= applyDeMorgansLaw(line);
-        // } while (simplify);
-
-        fprintf(preparsedProof, "%s\n", line);
-    }
-    
-    fclose(proof);
-    fclose(preparsedProof);
-}
-
 void refactor() {
 
-    FILE *preparsedProof, *refactoredProof;
+    FILE *proof, *refactoredProof;
     char line[2*BUFFER_SIZE];
     
-    preparsedProof = fopen(args->out.preparsed.file, "r+");
+    proof = fopen(args->out.raw.file, "r+");
     refactoredProof = fopen(args->out.refactored.file, "w+");
 
-    if(!preparsedProof) { errNdie("Could not open proof file"); }
+    if(!proof) { errNdie("Could not open proof file"); }
     if(!refactoredProof) { errNdie("Could not create refactored proof file"); }
 
      while(1) {
 
         // read line
-        if(!fgets(line, sizeof(line), preparsedProof)) {
+        if(!fgets(line, sizeof(line), proof)) {
             break; // end of file
         }
 
@@ -285,7 +241,7 @@ void refactor() {
         fprintf(refactoredProof, "%s\n", line);
     }
 
-    fclose(preparsedProof);
+    fclose(proof);
     fclose(refactoredProof);
 }
 
@@ -411,19 +367,6 @@ void parse() {
                 }
             }
         }
-        
-        // do {
-        //     simplify = false;
-        //     simplify |= simplifyImplication(args);
-        //     simplify |= simplifyNotTrue(args);
-        //     simplify |= simplifyNotFalse(args);
-        //     simplify |= simplifyDoubleNeg(args);
-        //     simplify |= simplifyNotForall(args);
-        //     simplify |= simplifyNotExists(args);
-        //     simplify |= applyDeMorgansLaw(args);
-        // } while (simplify);
-
-        // removeDuplicateBrackets(args);
 
         char *ptrPrems = prems;
 
@@ -487,7 +430,6 @@ void parse() {
 void formatProof() {
 
     int maxLength = 0;
-    importSymbols();
     struct hashTable *entry, *tmp;
     FILE *formattedProof = fopen(args->out.formatted.file, "w+");
 
@@ -543,7 +485,6 @@ void formatProof() {
 
 void decode() {
 
-    // preparse();
     refactor();
     parse();
     printHashTable();

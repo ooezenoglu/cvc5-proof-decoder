@@ -46,10 +46,6 @@ void printArgsStruct() {
     printf("        FILE: %s\n", args->out.raw.file);
     printf("        NAME: %s\n", args->out.raw.name);
     printf("        EXTENSION: %s\n", args->out.raw.extension);
-    printf("     PREPARSED:\n");
-    printf("        FILE: %s\n", args->out.preparsed.file);
-    printf("        NAME: %s\n", args->out.preparsed.name);
-    printf("        EXTENSION: %s\n", args->out.preparsed.extension);
     printf("     REFACTORED:\n");
     printf("        FILE: %s\n", args->out.refactored.file);
     printf("        NAME: %s\n", args->out.refactored.name);
