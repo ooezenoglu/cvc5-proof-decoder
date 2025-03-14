@@ -36,11 +36,6 @@ int main(int argc, char *argv[]) {
     if(args -> parse == 1 && strlen(args->in.p.file) > 0) {
         runCvc5Parser();
     }
-
-    // intuitive representation of problem when --s flag is set
-    if(args -> simplify == 1 && strlen(args->in.smt2.file) > 0) {
-        // TODO: run encoder here
-    }
     
     // run cvc5
     if(args -> run == 1 && strlen(args->in.smt2.file) > 0) {

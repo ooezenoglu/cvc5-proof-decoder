@@ -75,7 +75,6 @@ struct args {
     struct input in;
     struct output out;
     bool parse;
-    bool simplify;
     bool run;
     bool decode;
     char parserPath[BUFFER_SIZE];

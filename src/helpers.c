@@ -64,7 +64,6 @@ void printArgsStruct() {
     printf("        EXTENSION: %s\n", args->out.formatted.extension);
     printf("++++ OPTIONS ++++\n");
     printf("    PARSE: %i\n", args -> parse);
-    printf("    SIMPLIFY: %i\n", args -> simplify);
     printf("    RUN: %i\n", args -> run);
     printf("    DECODE: %i\n", args -> decode);
     printf("++++ PATHS ++++\n");

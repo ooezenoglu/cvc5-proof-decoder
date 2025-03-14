@@ -39,7 +39,6 @@ void extractCommandLineArgs(int argc, char *argv[]) {
     int opt;
     int fflag = 0;
     int pflag = 0;
-    int sflag = 0;
     int rflag = 0;
     int cflag = 0;
     char *extension;
@@ -103,12 +102,6 @@ void extractCommandLineArgs(int argc, char *argv[]) {
                 pflag = 1;
                 break;
 
-            // simplify option
-            case 's':
-                args -> simplify = 1;
-                sflag = 1;
-                break;
-
             // run option
             case 'r':
                 args -> run = 1;
@@ -151,7 +144,7 @@ void extractCommandLineArgs(int argc, char *argv[]) {
         errNdie("Missing file name");
     }
 
-    if((pflag == 1 || sflag == 1) && cflag == 0) {
+    if(pflag == 1 && cflag == 0) {
         errNdie("Missing parser path");
     }
     
