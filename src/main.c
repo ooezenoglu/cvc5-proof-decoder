@@ -80,7 +80,9 @@ int main(int argc, char *argv[]) {
             "(not (forall (A) (=> (and (Z) (X)) (B))))",
             "(=> (or (>= (x) 2) (not (>= (x) 1))) false)",
             "(=> (forall (x) (or (>= (x) 2) (not (>= (x) 1)))) false)",
-            "(= (=> (or (>= (x) 2) (not (>= (x) 1))) false) (not (forall (x) (or (>= (x) 2) (not (>= (x) 1))))))"
+            "(= (=> (or (>= (x) 2) (not (>= (x) 1))) false) (not (forall (x) (or (>= (x) 2) (not (>= (x) 1))))))",
+            "(not (exists (?X) (>= (- 5) (?X))))",
+            "(not (forall (?X) (= (- (- (?X))) (?X))))"
         };
         
         int numTests = sizeof(tests) / sizeof(tests[0]);
