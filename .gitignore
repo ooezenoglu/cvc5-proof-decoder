@@ -56,3 +56,11 @@ dkms.conf
 .vscode/
 .code-workspace
 .history/
+
+# exclude outputs
+benchmarks/**/*Zone.Identifier
+benchmarks/**/*_proof.txt
+benchmarks/**/*_proof_refactored.txt
+benchmarks/**/*_proof_parsed.txt
+benchmarks/**/*proof_simplified.txt
+benchmarks/**/*proof_formatted.txt

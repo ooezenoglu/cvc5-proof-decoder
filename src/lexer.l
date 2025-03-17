@@ -16,7 +16,8 @@
 "exists"        { return EXISTS; }
 "true"          { return TRUE; }
 "false"         { return FALSE; }
-[a-zA-Z][a-zA-Z0-9_]*  { yylval.str = strdup(yytext); return VAR; }
+[0-9]+                            { yylval.str = strdup(yytext); return NUMBER; }
+(">="|"<="|[a-zA-Z][a-zA-Z0-9_]*) { yylval.str = strdup(yytext); return VAR; }
 [ \t\n]+        { /* ignore hitespace */ }
 .               { return *yytext; }
 

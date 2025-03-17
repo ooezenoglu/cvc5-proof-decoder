@@ -34,7 +34,7 @@ int yylex(void);
 }
 
 // token declarations
-%token <str> VAR
+%token <str> VAR NUMBER
 %token LPAREN RPAREN
 %token NOT AND OR FORALL EXISTS IMP EQ TRUE FALSE
 
@@ -52,6 +52,7 @@ input:
 // a grouping is created as NODE_GROUP to preserve explicitly existing brackets
 expr:
       VAR                    { $$ = new_node(NODE_VAR, NULL, NULL, $1); }
+    | NUMBER                 { $$ = new_node(NODE_NUMBER, NULL, NULL, $1); }
     | TRUE                   { $$ = new_node(NODE_TRUE, NULL, NULL, "true"); }
     | FALSE                  { $$ = new_node(NODE_FALSE, NULL, NULL, "false"); }
     | LPAREN expr RPAREN     { $$ = new_node(NODE_GROUP, $2, NULL, NULL); }
@@ -71,8 +72,8 @@ expr:
     ;
 
 non_empty_arg_list:
-      expr                    { $$ = new_node(NODE_ARG_LIST, $1, NULL, NULL); }
-    | non_empty_arg_list expr { $$ = new_node(NODE_ARG_LIST, $2, $1, NULL); }
+      expr                      { $$ = new_node(NODE_ARG_LIST, $1, NULL, NULL); }
+    | expr non_empty_arg_list  { $$ = new_node(NODE_ARG_LIST, $1, $2, NULL); }
     ;
 
 %%
@@ -311,6 +312,9 @@ void ast_to_string(AST *node, char *buffer, size_t bufsize) {
         case NODE_ARG_LIST:
             // NODE_ARG_LIST is processed in NODE_FUNC
             snprintf(buffer, bufsize, "ARG_LIST");
+            break;
+        case NODE_NUMBER:
+            snprintf(buffer, bufsize, "%s", node->var);
             break;
         default:
             snprintf(buffer, bufsize, "UNKNOWN");
