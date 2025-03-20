@@ -201,6 +201,7 @@ void printHashTable() {
         printf("Tag: %s\n", entry->tag);
         printf("  Type:   %s\n", entry->line.type);
         printf("  Body:   %s\n", entry->line.body);
+        printf("  Resolved Body:   %s\n", entry->line.resolved_body);
         printf("  Rule:   %s\n", entry->line.rule);
         printf("  Prems:  %s\n", entry->line.prems.orig);
         printf("  Simplified Prems:  %s\n", entry->line.prems.simplified);

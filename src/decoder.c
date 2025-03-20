@@ -113,6 +113,65 @@ int extractSubcomponents(char *type, char *body, char *args, char *prems, char *
     return 0;
 }
 
+void resolveCrossReferences(char *body) {
+
+    char *ptr;
+
+    // while a cross-reference exists
+    while ((ptr = strchr(body, '@')) != NULL) {
+
+        char t[BUFFER_SIZE];
+        int i = 0;
+
+        // extract the tag from the body
+        while (ptr[i] && ptr[i] != ' ' && ptr[i] != ')' && ptr[i] != ']' && i < BUFFER_SIZE - 1) {
+            t[i] = ptr[i];
+            i++;
+        }
+        t[i] = '\0';
+
+        // Suche in der Hashmap (table) nach diesem Tag
+        struct hashTable *match = NULL;
+        HASH_FIND_STR(table, t, match);
+
+        if (match) {
+            // replace the Tag in the body
+            replaceAll(body, t, match->line.args.orig);
+        } else {
+            // skip
+            ptr++;
+        }
+    }
+}
+
+void simplifyExpression(char *expr) {
+    if (expr == NULL || strlen(expr) == 0) {
+        return;
+    }
+    
+    char simplifiedExpr[8 * BUFFER_SIZE];
+    
+    result_ast = NULL;  // reset AST
+
+    // scan the string to the lexer
+    yy_scan_string(expr);
+
+    // call the parser and store resulting string 
+    // simplified string is stored in global result_ast
+    yyparse();
+    
+    // result is NULL if there is no AST
+    if (result_ast != NULL) {
+        memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
+        ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
+    
+        if (strcmp(simplifiedExpr, "null") != 0) {
+            strcpy(expr, simplifiedExpr);
+            // printf("SIMPLIFIED: %s\n", expr);
+        }
+    }
+}
+
 void refactor() {
 
     FILE *proof, *refactoredProof;
@@ -222,6 +281,7 @@ void parse() {
         char type[BUFFER_SIZE] = {0};
         char tag[BUFFER_SIZE] = {0};
         char body[BUFFER_SIZE] = {0};
+        char resolved_body[BUFFER_SIZE] = {0};
         char rule[BUFFER_SIZE] = {0};
         char prems[BUFFER_SIZE] = {0};
         char sprems[BUFFER_SIZE] = {0};
@@ -232,93 +292,30 @@ void parse() {
         // extract components <TYPE><TAG><BODY>
         extractComponents(line, tag, type, body);
 
+        // resolve references to other proof lines
+        strcpy(resolved_body, body);
+        resolveCrossReferences(resolved_body);
+
         // extract more details depending on the type
-        if (extractSubcomponents(type, body, args, prems, note, rule) == 1) {
+        if (extractSubcomponents(type, resolved_body, args, prems, note, rule) == 1) {
             // type unknown; copy what's there
             fprintf(parsedProof, "%s\n", line);
             fprintf(simplifiedProof, "%s\n", line);
             continue;
         }
 
-        adjustBrackets(args);
-
-        char *ptrArgs = args;
-
-        // check whether tags from older steps should be replaced in args
-        while ((ptrArgs = strchr(ptrArgs, '@'))) {
-
-            char t[BUFFER_SIZE];
-            struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
-            int i = 0;
-
-            // extract the tag from the body
-            while (*ptrArgs && *ptrArgs != ' ' && *ptrArgs != ')' && *ptrArgs != ']' && i < sizeof(t) - 1) {
-                t[i++] = *ptrArgs++;
-            }
-            t[i] = '\0';
-
-            HASH_FIND_STR(table, t, match);
-
-            if (match) { replaceAll(args, t, match->line.args.orig); }
-            ptrArgs++;
-        }
-
+        // prepare for simplifcation
         removeDuplicateBrackets(args);
-
+        removeDuplicateBrackets(prems);
         strcpy(sargs, args);
-
-        if (!startsWith(type, "declare") && strlen(sargs) > 0) {
-            char simplifiedExpr[8*BUFFER_SIZE];
-            
-            result_ast = NULL;  // reset AST
-
-            // scan the string to the lexer
-            yy_scan_string(sargs);
-
-            // call the parser and store resulting string 
-            // simplified string is stored in global result_ast
-            yyparse();
-        
-            // result is NULL if there is no AST
-            if (result_ast != NULL) {
-                memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
-                ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
-    
-                if (strcmp(simplifiedExpr, "null") != 0) {
-                    strcpy(sargs, simplifiedExpr);
-                    // printf("SIMPLIFIED: %s\n", sargs);
-                }
-            }
-        }
-
-        char *ptrPrems = prems;
         strcpy(sprems, prems);
 
-        // check whether tags from older steps should be replaced in prems
-        while ((ptrPrems = strchr(ptrPrems, '@')) != NULL) {
-
-            char t[BUFFER_SIZE];
-            struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
-            int i = 0;
-
-            // extract the tag from the body
-            while (*ptrPrems && *ptrPrems != ' ' && *ptrPrems != ')' && *ptrPrems != ']' && i < sizeof(t) - 1) {
-                t[i++] = *ptrPrems++;
-            }
-            t[i] = '\0';
-
-            HASH_FIND_STR(table, t, match);
-
-            if (match) { 
-                replaceAll(prems, t, match->line.args.orig); 
-                replaceAll(sprems, t, match->line.args.simplified); 
-            }
-            ptrPrems++;
-        }
+        // simplify logical expressions
+        simplifyExpression(sargs);
+        simplifyExpression(sprems);
         
         cleanString(type);
         cleanString(tag);
-        cleanString(body);
         cleanString(rule);
         cleanString(prems);
         cleanString(sprems);
@@ -333,6 +330,7 @@ void parse() {
         strcpy(entry->tag, tag);
         strcpy(entry->line.type, type);
         strcpy(entry->line.body, body);
+        strcpy(entry->line.resolved_body, resolved_body);
         strcpy(entry->line.rule, rule);
         strcpy(entry->line.prems.simplified, sprems);
         strcpy(entry->line.prems.orig, prems);

@@ -5,6 +5,8 @@
 
 void extractComponents(char *line, char *tag, char *type, char *body);
 int extractSubcomponents(char *type, char *body, char *args, char *prems, char *note, char *rule);
+void resolveCrossReferences(char *body);
+void simplifyExpression(char *expr);
 void refactor();
 void parse();
 void formatProof();
