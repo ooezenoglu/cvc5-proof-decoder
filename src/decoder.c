@@ -297,8 +297,7 @@ void parse() {
         // extract more details depending on the type
         if (extractSubcomponents(type, resolved_body, args, prems, note, rule) == 1) {
             // type unknown; copy what's there
-            fprintf(parsedProof, "%s\n", line);
-            // fprintf(simplifiedProof, "%s\n", line);
+            strcpy(note, line);
             continue;
         }
         
