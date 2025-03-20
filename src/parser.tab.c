@@ -527,8 +527,8 @@ static const yytype_int8 yytranslate[] =
 static const yytype_int8 yyrline[] =
 {
        0,    48,    48,    49,    56,    57,    58,    59,    60,    61,
-      63,    64,    65,    66,    67,    69,    70,    72,    74,    80,
-      81,    87,    88
+      63,    64,    65,    66,    67,    69,    70,    72,    74,    79,
+      80,    85,    86
 };
 #endif
 
@@ -1220,25 +1220,25 @@ yyreduce:
     break;
 
   case 19: /* non_empty_arg_list: expr  */
-#line 80 "src/parser.y"
+#line 79 "src/parser.y"
                                 { (yyval.ast) = new_node(NODE_ARG_LIST, (yyvsp[0].ast), NULL, NULL); }
 #line 1226 "src/parser.tab.c"
     break;
 
   case 20: /* non_empty_arg_list: expr non_empty_arg_list  */
-#line 81 "src/parser.y"
+#line 80 "src/parser.y"
                                { (yyval.ast) = new_node(NODE_ARG_LIST, (yyvsp[-1].ast), (yyvsp[0].ast), NULL); }
 #line 1232 "src/parser.tab.c"
     break;
 
   case 21: /* expr_list: expr  */
-#line 87 "src/parser.y"
+#line 85 "src/parser.y"
                                 { (yyval.ast) = (yyvsp[0].ast); }
 #line 1238 "src/parser.tab.c"
     break;
 
   case 22: /* expr_list: expr expr_list  */
-#line 88 "src/parser.y"
+#line 86 "src/parser.y"
                                 { (yyval.ast) = new_node(NODE_SEQ, (yyvsp[-1].ast), (yyvsp[0].ast), NULL); }
 #line 1244 "src/parser.tab.c"
     break;
@@ -1437,7 +1437,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 91 "src/parser.y"
+#line 89 "src/parser.y"
 
 
 AST* new_node(NodeType type, AST* left, AST* right, char* var) {

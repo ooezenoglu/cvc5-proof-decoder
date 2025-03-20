@@ -63,7 +63,7 @@ struct style {
 
 struct line {
     char type[BUFFER_SIZE];
-    char rest[BUFFER_SIZE];
+    char body[BUFFER_SIZE];
     char rule[BUFFER_SIZE];
     struct style prems;
     struct style args;

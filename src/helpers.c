@@ -200,7 +200,7 @@ void printHashTable() {
     HASH_ITER(hh, table, entry, tmp) {
         printf("Tag: %s\n", entry->tag);
         printf("  Type:   %s\n", entry->line.type);
-        printf("  Rest:   %s\n", entry->line.rest);
+        printf("  Body:   %s\n", entry->line.body);
         printf("  Rule:   %s\n", entry->line.rule);
         printf("  Prems:  %s\n", entry->line.prems.orig);
         printf("  Simplified Prems:  %s\n", entry->line.prems.simplified);

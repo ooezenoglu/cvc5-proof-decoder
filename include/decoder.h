@@ -3,6 +3,8 @@
 
 #include "helpers.h"
 
+void extractComponents(char *line, char *tag, char *type, char *body);
+int extractSubcomponents(char *type, char *body, char *args, char *prems, char *note, char *rule);
 void refactor();
 void parse();
 void formatProof();

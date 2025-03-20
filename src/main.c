@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
     }
 
     // debug
-    printArgsStruct();
-    testExpressions();
+    // printArgsStruct();
+    // testExpressions();
 
     // cleanup
     free(args);

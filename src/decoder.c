@@ -1,6 +1,118 @@
 #include "../include/decoder.h"
 #include "../include/parse_util.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define BUFFER_SIZE 256
+
+void extractComponents(char *line, char *tag, char *type, char *body) {
+
+    char buffer[2 * BUFFER_SIZE];
+    
+    // temporal buffer
+    strncpy(buffer, line, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+    
+    // remove line breaks
+    int len = strlen(buffer);
+    if (len > 0 && buffer[len - 1] == '\n') {
+        buffer[len - 1] = '\0';
+    }
+    
+    // remove opening and closing brackets
+    len = strlen(buffer);
+    if (len > 0 && buffer[len - 1] == ')') {
+        buffer[len - 1] = '\0';
+    }
+    if (buffer[0] == '(') {
+        memmove(buffer, buffer + 1, strlen(buffer));
+    }
+    
+    type[0] = '\0';
+    tag[0] = '\0';
+    body[0] = '\0';
+    
+    // tokenize line
+    char *token = strtok(buffer, " \t");
+    if (token == NULL) { return; }
+    
+    // first word is always the tpye
+    strncpy(type, token, BUFFER_SIZE - 1);
+    type[BUFFER_SIZE - 1] = '\0';
+    
+    // get the next token
+    token = strtok(NULL, " \t");
+    
+    if (token != NULL && token[0] == '@') {
+        // tag, if word begins with @
+        strncpy(tag, token, BUFFER_SIZE - 1);
+        tag[BUFFER_SIZE - 1] = '\0';
+        
+        // the rest of the words is the body
+        char bodyBuffer[2 * BUFFER_SIZE] = "";
+        token = strtok(NULL, " \t");
+        if (token != NULL) {
+            strncpy(bodyBuffer, token, sizeof(bodyBuffer) - 1);
+            bodyBuffer[sizeof(bodyBuffer) - 1] = '\0';
+        }
+        while ((token = strtok(NULL, " \t")) != NULL) {
+            strcat(bodyBuffer, " ");
+            strcat(bodyBuffer, token);
+        }
+        strncpy(body, bodyBuffer, 2 * BUFFER_SIZE - 1);
+        body[2 * BUFFER_SIZE - 1] = '\0';
+    } else {
+        // no tag present, everything is body
+        char bodyBuffer[2 * BUFFER_SIZE] = "";
+        if (token != NULL) {
+            strncpy(bodyBuffer, token, sizeof(bodyBuffer) - 1);
+            bodyBuffer[sizeof(bodyBuffer) - 1] = '\0';
+        }
+        while ((token = strtok(NULL, " \t")) != NULL) {
+            strcat(bodyBuffer, " ");
+            strcat(bodyBuffer, token);
+        }
+        strncpy(body, bodyBuffer, 2 * BUFFER_SIZE - 1);
+        body[2 * BUFFER_SIZE - 1] = '\0';
+    }
+}
+
+int extractSubcomponents(char *type, char *body, char *args, char *prems, char *note, char *rule) {
+
+    // extract more details depending on the type
+    if (isEqual(type, "declare-type")) {
+        sscanf(body, "%s %[^\n]", args, note);
+    
+    } else if (isEqual(type, "declare-const") ) {
+        sscanf(body, "%[^ (] %[^\n]", args, note);
+    
+    } else if (isEqual(type, "define")) {
+        if (contains(body, "eo::var")) {
+            sscanf(body, "%[^)]%*c (eo::var \"%[^\"]\" %[^)]", prems, args, note);
+        } else {
+            sscanf(body, " %[^)]%*c %[^\n]", prems, args);
+        }
+        strcat(prems, ")");
+    
+    } else if (isEqual(type, "assume")) {
+        strcpy(args, body);
+    
+    } else if (isEqual(type, "step")) {
+        if (startsWith(body, ":rule")) {
+            sscanf(body, ":rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
+        } else {
+            sscanf(body, "%*[^:]:rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
+        }
+    
+    } else {
+        return 1; // unknown Typ
+    }
+    return 0;
+}
+
 void refactor() {
 
     FILE *proof, *refactoredProof;
@@ -93,13 +205,9 @@ void parse() {
     char buf[8*BUFFER_SIZE];
     char sbuf[8*BUFFER_SIZE];
 
-    refactoredProof = fopen(args->proof_ref, "r+");
-    parsedProof = fopen(args->proof_par, "w+");
-    simplifiedProof = fopen(args->proof_sim, "w+");
-
-    if(!refactoredProof) { errNdie("Could not open refactored proof file"); }
-    if(!parsedProof) { errNdie("Could not open parsed proof file"); }
-    if(!simplifiedProof) { errNdie("Could not create simplified proof file"); }
+    if(!(refactoredProof = fopen(args->proof_ref, "r+"))) { errNdie("Could not open refactored proof file"); }
+    if(!(parsedProof = fopen(args->proof_par, "w+"))) { errNdie("Could not open parsed proof file"); }
+    if(!(simplifiedProof = fopen(args->proof_sim, "w+"))) { errNdie("Could not create simplified proof file"); }
 
     while(1) {
 
@@ -109,14 +217,11 @@ void parse() {
         }
 
         // remove line breaks
-        int len = strlen(line);
-        if(len > 0 && line[len - 1] == '\n') {
-            line[len - 1] = '\0';
-        }
+        line[strcspn(line, "\n")] = '\0';
 
         char type[BUFFER_SIZE] = {0};
         char tag[BUFFER_SIZE] = {0};
-        char rest[BUFFER_SIZE] = {0};
+        char body[BUFFER_SIZE] = {0};
         char rule[BUFFER_SIZE] = {0};
         char prems[BUFFER_SIZE] = {0};
         char sprems[BUFFER_SIZE] = {0};
@@ -124,42 +229,12 @@ void parse() {
         char sargs[BUFFER_SIZE] = {0};
         char note[BUFFER_SIZE] = {0};
 
-        // extract tag
-        if(contains(line, "@")) {
-            sscanf(line, "(%s%*[^@]%s %[^\n]", type, tag, rest);
-        } else {
-            sscanf(line, "(%s %[^\n]", type, rest);
-        }
-
-        // delete last closing bracket
-        rest[strlen(rest) - 1] = '\0';
+        // extract components <TYPE><TAG><BODY>
+        extractComponents(line, tag, type, body);
 
         // extract more details depending on the type
-        if (isEqual(type, "declare-type")) {
-            sscanf(rest, "%s %[^\n]", args, note);
-        
-        } else if (isEqual(type, "declare-const") ) {
-            sscanf(rest, "%[^ (] %[^\n]", args, note);
-        
-        } else if (isEqual(type, "define")) {
-            if(contains(rest, "eo::var")) {
-                sscanf(rest, "%[^)]%*c (eo::var \"%[^\"]\" %[^)]", prems, args, note);
-            } else {
-                sscanf(rest, " %[^)]%*c %[^\n]", prems, args);
-            }
-            strcat(prems, ")");
-
-        } else if (isEqual(type, "assume")) {
-            strcpy(args, rest);
-
-        } else if (isEqual(type, "step")) {
-            if (startsWith(rest, ":rule")) {
-                sscanf(rest, ":rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
-            } else {
-                sscanf(rest, "%*[^:]:rule %[^:]:premises %[^:]:args %[^\n]", rule, prems, args);
-            }
-
-        } else { // type unknown; copy what's there
+        if (extractSubcomponents(type, body, args, prems, note, rule) == 1) {
+            // type unknown; copy what's there
             fprintf(parsedProof, "%s\n", line);
             fprintf(simplifiedProof, "%s\n", line);
             continue;
@@ -176,7 +251,7 @@ void parse() {
             struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
             int i = 0;
 
-            // extract the tag from the rest
+            // extract the tag from the body
             while (*ptrArgs && *ptrArgs != ' ' && *ptrArgs != ')' && *ptrArgs != ']' && i < sizeof(t) - 1) {
                 t[i++] = *ptrArgs++;
             }
@@ -211,7 +286,7 @@ void parse() {
     
                 if (strcmp(simplifiedExpr, "null") != 0) {
                     strcpy(sargs, simplifiedExpr);
-                    printf("SIMPLIFIED: %s\n", sargs);
+                    // printf("SIMPLIFIED: %s\n", sargs);
                 }
             }
         }
@@ -226,7 +301,7 @@ void parse() {
             struct hashTable *match = (struct hashTable *) malloc(sizeof(struct hashTable));
             int i = 0;
 
-            // extract the tag from the rest
+            // extract the tag from the body
             while (*ptrPrems && *ptrPrems != ' ' && *ptrPrems != ')' && *ptrPrems != ']' && i < sizeof(t) - 1) {
                 t[i++] = *ptrPrems++;
             }
@@ -243,7 +318,7 @@ void parse() {
         
         cleanString(type);
         cleanString(tag);
-        cleanString(rest);
+        cleanString(body);
         cleanString(rule);
         cleanString(prems);
         cleanString(sprems);
@@ -257,7 +332,7 @@ void parse() {
         entry = (struct hashTable *) malloc(sizeof(struct hashTable));
         strcpy(entry->tag, tag);
         strcpy(entry->line.type, type);
-        strcpy(entry->line.rest, rest);
+        strcpy(entry->line.body, body);
         strcpy(entry->line.rule, rule);
         strcpy(entry->line.prems.simplified, sprems);
         strcpy(entry->line.prems.orig, prems);
@@ -329,7 +404,7 @@ void formatProof() {
             padding = 0;
         }
         snprintf(finalStr, sizeof(finalStr), "%s%*s%s", mainStr, padding, "", parenStr);
-        printf("%s\n", finalStr);
+        // printf("%s\n", finalStr);
         fprintf(formattedProof, "%s\n", finalStr);
     }
 
