@@ -483,7 +483,7 @@ void formatProof() {
 
         cleanString(parenStr);
 
-        int padding = (maxLength + 10) - strlen(mainStr);
+        int padding = (maxLength + 2) - strlen(mainStr);
         if (padding < 0) {
             padding = 0;
         }

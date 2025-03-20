@@ -84,7 +84,9 @@ void printHashTable() {
         printf("  Rest:   %s\n", entry->line.rest);
         printf("  Rule:   %s\n", entry->line.rule);
         printf("  Prems:  %s\n", entry->line.prems.orig);
+        printf("  Simplified Prems:  %s\n", entry->line.prems.simplified);
         printf("  Args:   %s\n", entry->line.args.orig);
+        printf("  Simplified Args:  %s\n", entry->line.args.simplified);
         printf("  Note:   %s\n", entry->line.note);
         printf("---------------------------\n");
     }
