@@ -19,6 +19,7 @@ typedef enum {
     NODE_GROUP,   // group to maintain brackets
     NODE_FUNC,    // function application
     NODE_ARG_LIST, // argument list for function application
+    NODE_SEQ, // sequence for grouping multiple expressions
     NODE_NUMBER  
 } NodeType;
 

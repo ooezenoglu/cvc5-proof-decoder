@@ -15,6 +15,7 @@ extern int yyparse(void);
 extern void yy_scan_string(const char*);
 
 void runCvc5();
+void testExpressions();
 
 int main(int argc, char *argv[]) {
 
@@ -58,48 +59,12 @@ int main(int argc, char *argv[]) {
         // TODO error handling
         
         decode();
-
-        char simplifiedExpr[8*BUFFER_SIZE];
-
-        const char *tests[] = {
-            "(=> (A) (B))",
-            "(=> (subset (A) (A)) (subset (A) (A)))",
-            "(not (not (A)))",
-            "(not (not (not (not (A)))))",
-            "(not (=> (A) (B)))",
-            "(not (not (not (=> (S) (k)))))",
-            "(not (forall (A) (=> (A) (B))))",
-            "(not (and (A) (B)))",            
-            "(not (or (A) (B)))",            
-            "(not (forall (x) (A)))",            
-            "(not (exists (x) (A)))",
-            "(not (and (=> (A) (B)) (not (not (C)))))",
-            "(= (A) (B))",            
-            "((A))",
-            "(forall (A) (=> (A) (B)))",
-            "(not (forall (A) (=> (and (Z) (X)) (B))))",
-            "(=> (or (>= (x) 2) (not (>= (x) 1))) false)",
-            "(=> (forall (x) (or (>= (x) 2) (not (>= (x) 1)))) false)",
-            "(= (=> (or (>= (x) 2) (not (>= (x) 1))) false) (not (forall (x) (or (>= (x) 2) (not (>= (x) 1))))))",
-            "(not (exists (?X) (>= (- 5) (?X))))",
-            "(not (forall (?X) (= (- (- (?X))) (?X))))"
-        };
-        
-        int numTests = sizeof(tests) / sizeof(tests[0]);
-        
-        for (int i = 0; i < numTests; i++) {
-            printf("Orig string: %s\n", tests[i]);
-            yy_scan_string(tests[i]);
-            yyparse();
-            memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
-            ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
-            printf("New string: %s\n\n", simplifiedExpr);
-        }
-        
     }
 
     // debug
     printArgsStruct();
+
+    testExpressions();
 
     // cleanup
     free(args);
@@ -130,4 +95,101 @@ void runCvc5() {
     if (system(command) == -1) {
         errNdie("Could not execute the cvc5 parser command");
     }
+}
+
+void testExpressions() {
+    char simplifiedExpr[8 * BUFFER_SIZE];
+
+    char *validTests[] = {
+        // basic logical operations
+        "(=> (A) (B))",
+        "(=> (subset (A) (A)) (subset (A) (A)))",
+        "(not (not (A)))",
+        "(not (not (not (not (A)))))",
+        "(not (=> (A) (B)))",
+        "(not (not (not (=> (A) (B)))))",
+        
+        // quantifiers and negations
+        "(not (forall (A) (=> (A) (B))))",
+        "(not (forall (x) (A)))",
+        "(not (exists (x) (A)))",
+        "(forall (A) (=> (A) (B)))",
+        "(not (forall (A) (=> (and (Z) (X)) (B))))",
+        
+        // logical operators
+        "(not (and (A) (B)))",
+        "(not (or (A) (B)))",
+        "(not (and (=> (A) (B)) (not (not (C)))))",
+        "(= (A) (B))",
+        "((A))",
+        
+        // nested expressions
+        "(=> (or (>= (x) 2) (not (>= (x) 1))) false)",
+        "(=> (forall (x) (or (>= (x) 2) (not (>= (x) 1)))) false)",
+        "(= (=> (or (>= (x) 2) (not (>= (x) 1))) false) (not (forall (x) (or (>= (x) 2) (not (>= (x) 1))))))",
+        "(not (exists (?X) (>= (- 5) (?X))))",
+        "(not (forall (?X) (= (- (- (?X))) (?X))))",
+        
+        // additional test cases
+        "A",
+        "123",
+        "((A) (B))",
+        "(f (A) (B) (C))",
+        "(forall (x) (exists (y) (and (P x) (Q y))))",
+        "(=> (A) (=> (B) (C)))",
+        "(and (or (A) (B)) (not (C)))",
+        "(not (or (and (A) (B)) (and (C) (D))))",
+        "(not (not (not (and (A) (or (B) (C))))))"
+    };    
+
+    char *invalidTests[] = {
+        "(=> (A) (B)",
+        "(and (A) (B)",
+        "(not (A)) extra",
+        "not (A)",
+        "(and (A))",
+        "(forall (x) (A)",
+        "(exists (x) A))",
+        "(not (and (A) (B) (C)))",
+        "(=> (A) )",
+        "()"
+    };    
+    
+    int numValidTests = sizeof(validTests) / sizeof(validTests[0]);
+    int numInvalidTests = sizeof(invalidTests) / sizeof(invalidTests[0]);
+
+    printf("+++++ Valid Expressions +++++\n\n");
+    for (int i = 0; i < numValidTests; i++) {
+
+        result_ast = NULL;
+
+        printf("Test string: %s\n", validTests[i]);
+
+        yy_scan_string(validTests[i]);
+        yyparse();
+
+        memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
+        ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
+
+        printf("Simplified string: %s\n\n", simplifiedExpr);
+    }
+
+    memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
+
+    printf("+++++ Invalid Expressions +++++\n\n");
+    for (int i = 0; i < numInvalidTests; i++) {
+
+        result_ast = NULL;
+
+        printf("Test string: %s\n", invalidTests[i]);
+
+        yy_scan_string(invalidTests[i]);
+        yyparse();
+
+        memset(simplifiedExpr, 0, sizeof(simplifiedExpr));
+        ast_to_string(result_ast, simplifiedExpr, sizeof(simplifiedExpr));
+
+        printf("Simplified string: %s\n\n", simplifiedExpr);
+    }
+
 }
