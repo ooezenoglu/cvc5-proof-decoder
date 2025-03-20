@@ -261,14 +261,12 @@ void refactor() {
 
 void parse() {
 
-    FILE *refactoredProof, *parsedProof, *simplifiedProof;
+    FILE *refactoredProof, *parsedProof;
     char line[2*BUFFER_SIZE];
     char buf[8*BUFFER_SIZE];
-    char sbuf[8*BUFFER_SIZE];
 
     if(!(refactoredProof = fopen(args->proof_ref, "r+"))) { errNdie("Could not open refactored proof file"); }
     if(!(parsedProof = fopen(args->proof_par, "w+"))) { errNdie("Could not open parsed proof file"); }
-    if(!(simplifiedProof = fopen(args->proof_sim, "w+"))) { errNdie("Could not create simplified proof file"); }
 
     while(1) {
 
@@ -286,9 +284,7 @@ void parse() {
         char resolved_body[BUFFER_SIZE] = {0};
         char rule[BUFFER_SIZE] = {0};
         char prems[BUFFER_SIZE] = {0};
-        char sprems[BUFFER_SIZE] = {0};
         char args[BUFFER_SIZE] = {0};
-        char sargs[BUFFER_SIZE] = {0};
         char note[BUFFER_SIZE] = {0};
 
         // extract components <TYPE><TAG><BODY>
@@ -302,34 +298,16 @@ void parse() {
         if (extractSubcomponents(type, resolved_body, args, prems, note, rule) == 1) {
             // type unknown; copy what's there
             fprintf(parsedProof, "%s\n", line);
-            fprintf(simplifiedProof, "%s\n", line);
+            // fprintf(simplifiedProof, "%s\n", line);
             continue;
         }
-
-        // prepare for simplifcation
-        removeDuplicateBrackets(args);
-        removeDuplicateBrackets(prems);
-        strcpy(sargs, args);
-        strcpy(sprems, prems);
-
-        // simplify logical expressions
-        simplifyExpression(sargs);
-        simplifyExpression(sprems);
         
         cleanString(type);
         cleanString(tag);
         cleanString(rule);
         cleanString(prems);
-        cleanString(sprems);
         cleanString(args);
-        cleanString(sargs);
         cleanString(note);
-
-        // extract the length of the LHS for later formatting
-        char mainStr[4 * BUFFER_SIZE];
-        snprintf(mainStr, sizeof(mainStr), "%s %s %s", type, sargs, note);
-        int len = strlen(mainStr);
-        if (len > lengthMainString) { lengthMainString = len; }
 
         // add the new entry to the hash table
         struct hashTable *entry;
@@ -340,24 +318,62 @@ void parse() {
         strcpy(entry->line.body, body);
         strcpy(entry->line.resolved_body, resolved_body);
         strcpy(entry->line.rule, rule);
-        strcpy(entry->line.prems.simplified, sprems);
         strcpy(entry->line.prems.orig, prems);
         strcpy(entry->line.args.orig, args);
-        strcpy(entry->line.args.simplified, sargs);
         strcpy(entry->line.note, note);
         HASH_ADD_STR(table, tag, entry);
 
         snprintf(buf, sizeof(buf), "%s %s %s (%s %s)\n", type, args, note, rule, prems);
         cleanString(buf);
         fprintf(parsedProof, "%s", buf);
-
-        snprintf(sbuf, sizeof(sbuf), "%s %s %s (%s %s)\n", type, sargs, note, rule, sprems);
-        cleanString(sbuf);
-        fprintf(simplifiedProof, "%s", sbuf);
     }
 
     fclose(refactoredProof);
     fclose(parsedProof);
+}
+
+void simplify() {
+
+    FILE *simplifiedProof;
+    struct hashTable *entry, *tmp;
+    char sbuf[8*BUFFER_SIZE];
+
+    if(!(simplifiedProof = fopen(args->proof_sim, "w+"))) { errNdie("Could not create simplified proof file"); }
+    
+    HASH_ITER(hh, table, entry, tmp) {
+
+        char sprems[BUFFER_SIZE] = {0};
+        char sargs[BUFFER_SIZE] = {0};
+
+        strcpy(sargs, entry->line.args.orig);
+        strcpy(sprems, entry->line.prems.orig);
+
+        // prepare for simplifcation
+        removeDuplicateBrackets(sargs);
+        removeDuplicateBrackets(sprems);
+
+        // simplify logical expressions
+        simplifyExpression(sargs);
+        simplifyExpression(sprems);
+
+        cleanString(sargs);
+        cleanString(sprems);
+
+        strcpy(entry->line.prems.simplified, sprems);
+        strcpy(entry->line.args.simplified, sargs);
+
+         // extract the length of the LHS for later formatting
+         char mainStr[4 * BUFFER_SIZE];
+         snprintf(mainStr, sizeof(mainStr), "%s %s %s", entry -> line.type, sargs, entry->line.note);
+         int len = strlen(mainStr);
+         if (len > lengthMainString) { lengthMainString = len; }
+
+        snprintf(sbuf, sizeof(sbuf), "%s %s %s (%s %s)\n", 
+                 entry->line.type, entry->line.args.simplified, 
+                 entry->line.note, entry->line.rule, entry->line.prems.simplified);
+        cleanString(sbuf);
+        fprintf(simplifiedProof, "%s", sbuf);
+    }
     fclose(simplifiedProof);
 }
 
@@ -401,6 +417,7 @@ void decode() {
 
     refactor();
     parse();
+    simplify();
     formatProof();
 
     // debug
