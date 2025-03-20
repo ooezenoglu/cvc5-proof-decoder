@@ -8,6 +8,8 @@
 
 #define BUFFER_SIZE 256
 
+int lengthMainString = 0;
+
 void extractComponents(char *line, char *tag, char *type, char *body) {
 
     char buffer[2 * BUFFER_SIZE];
@@ -323,6 +325,12 @@ void parse() {
         cleanString(sargs);
         cleanString(note);
 
+        // extract the length of the LHS for later formatting
+        char mainStr[4 * BUFFER_SIZE];
+        snprintf(mainStr, sizeof(mainStr), "%s %s %s", type, sargs, note);
+        int len = strlen(mainStr);
+        if (len > lengthMainString) { lengthMainString = len; }
+
         // add the new entry to the hash table
         struct hashTable *entry;
         
@@ -355,37 +363,19 @@ void parse() {
 
 void formatProof() {
 
-    int maxLength = 0;
     struct hashTable *entry, *tmp;
     FILE *formattedProof = fopen(args->proof_for, "w+");
 
-    // first run: find max length of main part
+    // print proof lines of the form <TYPE><ARGS><NOTE>     (<RULE> <PREMS>)
     HASH_ITER(hh, table, entry, tmp) {
 
-        char mainStr[4 * BUFFER_SIZE];
-
-        snprintf(mainStr, sizeof(mainStr), "%s %s %s",
-                 entry->line.type, entry->line.args.simplified, entry->line.note);
-
-        replaceAll(mainStr, "\\(\\s*\\)", "");
-        replaceAll(mainStr, "\\(\\s+", "(");
-        replaceAll(mainStr, "\\s+\\)", ")");
-        replaceAll(mainStr, "\\(\\)", "");
-        trimWhitespaces(mainStr);
-
-        int len = strlen(mainStr);
-        if (len > maxLength) {
-            maxLength = len;
-        }
-    }
-    
-    // second run: print formatted lines
-    HASH_ITER(hh, table, entry, tmp) {
         char mainStr[4 * BUFFER_SIZE];
         char parenStr[4 * BUFFER_SIZE];
         char finalStr[8 * BUFFER_SIZE];
+
         snprintf(mainStr, sizeof(mainStr), "%s %s %s",
                  entry->line.type, entry->line.args.simplified, entry->line.note);
+
         replaceAll(mainStr, "\\(\\s*\\)", "");
         replaceAll(mainStr, "\\(\\s+", "(");
         replaceAll(mainStr, "\\s+\\)", ")");
@@ -397,12 +387,10 @@ void formatProof() {
 
         cleanString(parenStr);
 
-        int padding = (maxLength + 2) - strlen(mainStr);
-        if (padding < 0) {
-            padding = 0;
-        }
+        int padding = (lengthMainString + 10) - strlen(mainStr);
+        if (padding < 0) { padding = 0; }
+
         snprintf(finalStr, sizeof(finalStr), "%s%*s%s", mainStr, padding, "", parenStr);
-        // printf("%s\n", finalStr);
         fprintf(formattedProof, "%s\n", finalStr);
     }
 
