@@ -1,172 +1,13 @@
 #include "../include/decoder.h"
 #include "../include/parse_util.h"
 
-char *typeVariables[] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
-#define TYPEVARS_LENGTH (sizeof(typeVariables) / sizeof(char*))
-
-void adjustBrackets(char *str) {
-    int len = strlen(str);
-    char temp[BUFFER_SIZE];
-
-    // wrap brackets around the string if not done already 
-    if (len == 0 || str[0] != '(' || str[len - 1] != ')') {
-        snprintf(temp, BUFFER_SIZE, "(%s)", str);
-        strncpy(str, temp, BUFFER_SIZE - 1);
-        str[BUFFER_SIZE - 1] = '\0';
-        len = strlen(str);
-    }
-
-    // remove duplicate brackets ((...))
-    if (len >= 4 && str[0] == '(' && str[1] == '(' &&
-        str[len - 2] == ')' && str[len - 1] == ')') {
-        // copy content between first and last bracket
-        strncpy(temp, str + 1, len - 2);
-        temp[len - 2] = '\0';
-        strncpy(str, temp, BUFFER_SIZE - 1);
-        str[BUFFER_SIZE - 1] = '\0';
-    }
-}
-
-void removeDuplicateBrackets(char *str) {
-
-    bool changed = true;
-
-    while (changed) {
-
-        changed = false;
-        int len = strlen(str);
-
-        // iterate over string
-        for (int i = 0; i < len - 1; i++) {
-            if (str[i] == '(' && str[i + 1] == '(') {
-                int depth = 1;
-                int j = i + 2;
-                // find matching closing bracket
-                while (j < len && depth > 0) {
-                    if (str[j] == '(')
-                        depth++;
-                    else if (str[j] == ')')
-                        depth--;
-                    j++;
-                }
-
-                // if pattern (( ... )) found, remove duplicate brackets
-                if (depth == 0 && j < len && str[j] == ')') {
-                    char temp[BUFFER_SIZE];
-                    int pos = 0;
-                    for (int k = 0; k <= i; k++)
-                        temp[pos++] = str[k];
-                    for (int k = i + 2; k < j; k++)
-                        temp[pos++] = str[k];
-                    for (int k = j + 1; k < len; k++)
-                        temp[pos++] = str[k];
-                    temp[pos] = '\0';
-                    strncpy(str, temp, BUFFER_SIZE);
-                    str[BUFFER_SIZE - 1] = '\0';
-                    changed = true;
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void cleanString(char *str) {
-
-    // remove unnecessary whitespace in brackets
-    replaceAll(str, "\\(\\s*\\)", "");
-    replaceAll(str, "\\(\\s+", "(");
-    replaceAll(str, "\\s+\\)", ")");
-    replaceAll(str, "\\(\\)", "");
-
-    trimWhitespaces(str);
-}
-
-char* generateTypeVar() {
-    
-    static int i = 0;
-
-    if (i >= TYPEVARS_LENGTH) {
-        errNdie("Not enough type variables");
-    }
-
-    char* type = typeVariables[i];
-    i++;
-
-    return type;
-}
-
-bool replaceAll(char* str, char* pattern, char* replacement) {
-
-    regex_t regex;
-    // matches exactly two groups, where matches[0] is the whole match
-    regmatch_t matches[3];
-    char buffer[2 * BUFFER_SIZE];
-    char* cursor = str;
-    bool matched = false;
-
-    // compile regex
-    if (regcomp(&regex, pattern, REG_EXTENDED | REG_ICASE) != 0) {
-        errNdie("Regex compilation failed");
-    }
-
-    buffer[0] = '\0';
-
-    while (regexec(&regex, cursor, 3, matches, 0) == 0) {
-
-        matched = true;
-
-        // copy string before the match
-        strncat(buffer, cursor, matches[0].rm_so);
-
-        // process the replacement pattern
-        char* rCursor = replacement;
-
-        while (*rCursor != '\0') {
-
-            // for binary operations, replace \1 or \2 with respective group content
-            if (*rCursor == '\\' && (*(rCursor + 1) == '1' || *(rCursor + 1) == '2')) {
-                // extract the group number
-                int groupIndex = *(rCursor + 1) - '0';
-                // calculate length of the group content
-                int length = matches[groupIndex].rm_eo - matches[groupIndex].rm_so;
-                // add group content
-                strncat(buffer, cursor + matches[groupIndex].rm_so, length);
-                rCursor += 2; // skip escape char + digit
-
-            } else {
-                // copy every other character
-                strncat(buffer, rCursor, 1);
-                rCursor++;
-            }
-        }
-
-        // move cursor to behind the match
-        cursor += matches[0].rm_eo;
-    }
-
-    // copy rest of the string
-    strcat(buffer, cursor);
-
-    // modify original string
-    strncpy(str, buffer, BUFFER_SIZE - 1);
-
-    // safety measure
-    str[BUFFER_SIZE - 1] = '\0'; 
-
-    // cleanup
-    regfree(&regex);
-
-    return matched;
-}
-
 void refactor() {
 
     FILE *proof, *refactoredProof;
     char line[2*BUFFER_SIZE];
     
-    proof = fopen(args->out.raw.file, "r+");
-    refactoredProof = fopen(args->out.refactored.file, "w+");
+    proof = fopen(args->proof_raw, "r+");
+    refactoredProof = fopen(args->proof_ref, "w+");
 
     if(!proof) { errNdie("Could not open proof file"); }
     if(!refactoredProof) { errNdie("Could not create refactored proof file"); }
@@ -252,9 +93,9 @@ void parse() {
     char buf[8*BUFFER_SIZE];
     char sbuf[8*BUFFER_SIZE];
 
-    refactoredProof = fopen(args->out.refactored.file, "r+");
-    parsedProof = fopen(args->out.parsed.file, "w+");
-    simplifiedProof = fopen(args->out.simplified.file, "w+");
+    refactoredProof = fopen(args->proof_ref, "r+");
+    parsedProof = fopen(args->proof_par, "w+");
+    simplifiedProof = fopen(args->proof_sim, "w+");
 
     if(!refactoredProof) { errNdie("Could not open refactored proof file"); }
     if(!parsedProof) { errNdie("Could not open parsed proof file"); }
@@ -443,7 +284,7 @@ void formatProof() {
 
     int maxLength = 0;
     struct hashTable *entry, *tmp;
-    FILE *formattedProof = fopen(args->out.formatted.file, "w+");
+    FILE *formattedProof = fopen(args->proof_for, "w+");
 
     // first run: find max length of main part
     HASH_ITER(hh, table, entry, tmp) {
@@ -499,8 +340,6 @@ void decode() {
 
     refactor();
     parse();
-    printHashTable();
-
     formatProof();
 
     // debug

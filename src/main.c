@@ -1,6 +1,4 @@
 #include "../include/helpers.h"
-#include "../include/encoder.h"
-#include "../include/decoder.h"
 #include "../include/parse_util.h"
 
 struct node *typeList;
@@ -14,6 +12,7 @@ struct hashTable *table;
 extern int yyparse(void);
 extern void yy_scan_string(const char*);
 
+void runCvc5Parser();
 void runCvc5();
 void testExpressions();
 
@@ -28,47 +27,70 @@ int main(int argc, char *argv[]) {
     extractCommandLineArgs(argc, argv);
 
     // parse .p into .smt2 when --p flag is set
-    if(args -> parse == 1 && strlen(args->in.p.file) > 0) {
+    if(args -> parse == 1 && strlen(args->p_file) > 0) {
         runCvc5Parser();
     }
     
     // run cvc5
-    if(args -> run == 1 && strlen(args->in.smt2.file) > 0) {
+    if(args -> run == 1 && strlen(args->smt2_file) > 0) {
         runCvc5();
     }
 
     if(args -> decode == 1) {
 
-        FILE *proof = fopen(args->out.raw.file, "r+");
+        FILE *proof = fopen(args->proof_raw, "r+");
     
         if (fgets(args->result, sizeof(args->result), proof)) {
             // remove line break if it exists
             args->result[strcspn(args->result, "\n")] = '\0';
         }
 
+        fclose(proof);
+
         if(!isEqual(args->result, "unsat")) {
             errNdie("The input problem is not unsat");
         }
 
         // set up output files
-        generateOutputFile(args->out.refactored.file, args->out.raw.name, "_refactored.txt");
-        generateOutputFile(args->out.parsed.file, args->out.raw.name, "_parsed.txt");
-        generateOutputFile(args->out.simplified.file, args->out.raw.name, "_simplified.txt");
-        generateOutputFile(args->out.formatted.file, args->out.raw.name, "_formatted.txt");
-
-        // TODO error handling
+        openFile(args->proof_ref, args-> proof_raw, "_refactored.txt");
+        openFile(args->proof_par, args -> proof_raw, "_parsed.txt");
+        openFile(args->proof_sim, args -> proof_raw, "_simplified.txt");
+        openFile(args->proof_for, args -> proof_raw, "_formatted.txt");
         
         decode();
     }
 
     // debug
     printArgsStruct();
-
     testExpressions();
 
     // cleanup
     free(args);
     return 0;
+}
+
+void runCvc5Parser() {
+
+    char command[4*BUFFER_SIZE];
+
+    setExecPermissions(args -> parserPath);
+
+    // set up the smt2 file
+    openFile(args->smt2_file, args -> p_file, ".smt2");
+
+    snprintf(
+            command, 
+            sizeof(command),
+            "%s -o raw-benchmark --parse-only --output-lang=smt2 %s > %s",
+            args->parserPath,
+            args->p_file,
+            args->smt2_file
+            );
+    
+    // execute command
+    if (system(command) == -1) {
+        errNdie("Could not execute the cvc5 parser command");
+    }
 }
 
 void runCvc5() {
@@ -77,18 +99,16 @@ void runCvc5() {
 
     setExecPermissions(args->cvc5Path);
 
-    // store file, file name, file extension
-    generateOutputFile(args->out.raw.file, args->in.smt2.name, "_proof.txt");
-    generateOutputFile(args->out.raw.name, removeFileExtension(args->out.raw.file), "");
-    generateOutputFile(args->out.raw.extension, getFileExtension(args->out.raw.file), "");
+    // set up the proof file
+    openFile(args->proof_raw, args->smt2_file, "_proof.txt");
     
     snprintf(
         command, 
         sizeof(command),
         "%s %s --dump-proofs --force-logic='HO_ALL' > %s",
         args->cvc5Path,
-        args->in.smt2.file,
-        args->out.raw.file
+        args->smt2_file,
+        args->proof_raw
     );
     
     // execute command

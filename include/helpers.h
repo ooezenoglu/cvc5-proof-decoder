@@ -15,23 +15,12 @@
 #include <locale.h>
 #include <wctype.h>
 #include "uthash.h"
-#include "rules.h"
 #include "decoder.h"
 
 #define BUFFER_SIZE 256
 #define SMT2 "smt2"
 #define P "p"
 #define NUM_EXTENSIONS 2
-#define NOTTRUE "not true"
-#define FALSE "false"
-#define NOTFALSE "not false"
-#define TRUE "true"
-#define NOTNOT "not not"
-#define NOTFORALL "not forall"
-#define NOTEXISTS "not exists"
-#define EXISTSNOT "exists not"
-#define FORALLNOT "forall not"
-#define IMPL "=>"
 
 struct node {
     void* structure;
@@ -51,28 +40,14 @@ struct type {
     struct type *next;
 };
 
-struct file {
-    char file[BUFFER_SIZE];
-    char name[BUFFER_SIZE];
-    char extension[BUFFER_SIZE];
-};
-
-struct input {
-    struct file p;
-    struct file smt2;
-};
-
-struct output {
-    struct file raw;
-    struct file refactored;
-    struct file parsed;
-    struct file simplified;
-    struct file formatted;
-};
-
 struct args {
-    struct input in;
-    struct output out;
+    char p_file[BUFFER_SIZE];
+    char smt2_file[BUFFER_SIZE];
+    char proof_raw[BUFFER_SIZE];
+    char proof_ref[BUFFER_SIZE];
+    char proof_par[BUFFER_SIZE];
+    char proof_sim[BUFFER_SIZE];
+    char proof_for[BUFFER_SIZE];
     bool parse;
     bool run;
     bool decode;
@@ -113,20 +88,25 @@ void printTypeList(struct node *head);
 struct node* addNode(void* structure, int size);
 void push(struct node** head, void* structure, int size);
 
-void generateOutputFile(char *output, char *input, char *suffix);
-bool contains(const char *str, const char *substr);
-void setExecPermissions(char *path);
+void adjustBrackets(char *str);
+void removeDuplicateBrackets(char *str);
+void cleanString(char *str);
+char* generateTypeVar();
 void printArgsStruct();
 void printHashTable();
-void addSymbol(char *key, char *value);
 void trimWhitespaces(char *str);
+bool replaceAll(char* str, char* pattern, char* replacement);
+bool contains(const char *str, const char *substr);
 bool startsWith(char *str, char *comp);
 char* stringCopy(char *src);
 bool isEqual(char *str1, char *str2);
+void openFile(char *output, char *input, char *suffix);
 char *removeFileExtension(char *file);
 int getIndexOfFileExtension(char *file);
 char *getFileExtension(char *file);
+void setExecPermissions(char *path);
 void errNdie(char *msg);
+void extractCommandLineArgs(int argc, char *argv[]);
 
 extern struct dict *symbs;
 extern struct hashTable *table;

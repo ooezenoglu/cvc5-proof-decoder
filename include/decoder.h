@@ -3,10 +3,6 @@
 
 #include "helpers.h"
 
-void removeDuplicateBrackets(char *str);
-void cleanString(char *str);
-char* generateTypeVar();
-bool replaceAll(char* str, char* pattern, char* replacement);
 void refactor();
 void parse();
 void formatProof();
