@@ -210,14 +210,13 @@ void refactor() {
 
         // remove special characters and extra spaces
         replaceAll(line, "\\$+", "");
+        replaceAll(line, "\\?+", "");
         replaceAll(line, "\\( ", "(");
         replaceAll(line, " \\)", ")");
         replaceAll(line, "  ", " ");
     
         // extract and refactor type
         if (startsWith(line, "(declare-type")) {
-
-            // TODO: Bool -> b; Int -> i
 
             char original[BUFFER_SIZE];
             char replacement[BUFFER_SIZE];
@@ -237,7 +236,7 @@ void refactor() {
             strncpy(newType.replacement, replacement, BUFFER_SIZE - 1);
             newType.replacement[BUFFER_SIZE - 1] = '\0';
 
-            newType.arity = 0; // TODO extract arity
+            // newType.arity = 0; // TODO extract arity
 
             push(&typeList, &newType, sizeof(struct type));
         }
@@ -402,7 +401,7 @@ void formatProof() {
 
         cleanString(parenStr);
 
-        int padding = (lengthMainString + 10) - strlen(mainStr);
+        int padding = (lengthMainString + 2) - strlen(mainStr);
         if (padding < 0) { padding = 0; }
 
         snprintf(finalStr, sizeof(finalStr), "%s%*s%s", mainStr, padding, "", parenStr);
