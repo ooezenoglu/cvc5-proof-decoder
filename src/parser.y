@@ -331,5 +331,5 @@ void ast_to_string(AST *node, char *buffer, size_t bufsize) {
 }
 
 void yyerror(const char* s) {
-    fprintf(stderr, "Error: %s\n", s);
+    // silence error message
 }

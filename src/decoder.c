@@ -267,6 +267,8 @@ void parse() {
     if(!(refactoredProof = fopen(args->proof_ref, "r+"))) { errNdie("Could not open refactored proof file"); }
     if(!(parsedProof = fopen(args->proof_par, "w+"))) { errNdie("Could not open parsed proof file"); }
 
+    fprintf(parsedProof, "%s\n", args->result);
+
     while(1) {
 
         // read line
@@ -338,6 +340,8 @@ void simplify() {
 
     if(!(simplifiedProof = fopen(args->proof_sim, "w+"))) { errNdie("Could not create simplified proof file"); }
     
+    fprintf(simplifiedProof, "%s\n", args->result);
+
     HASH_ITER(hh, table, entry, tmp) {
 
         char sprems[BUFFER_SIZE] = {0};
@@ -379,6 +383,8 @@ void formatProof() {
 
     struct hashTable *entry, *tmp;
     FILE *formattedProof = fopen(args->proof_for, "w+");
+
+    fprintf(formattedProof, "%s\n", args->result);
 
     // print proof lines of the form <TYPE><ARGS><NOTE>     (<RULE> <PREMS>)
     HASH_ITER(hh, table, entry, tmp) {
