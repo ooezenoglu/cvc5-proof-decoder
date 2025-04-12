@@ -115,13 +115,46 @@ int extractSubcomponents(char *type, char *body, char *args, char *prems, char *
     return 0;
 }
 
-void resolveCrossReferences(char *body) {
+void replaceTagExact(char *body, char *tag, char *replacement) {
+
+    char buffer[BUFFER_SIZE] = "";
+    int taglen = strlen(tag);
+    char *start = body;
+    char *found;
+    
+    while ((found = strstr(start, tag)) != NULL) {
+        
+        char before = (found == body) ? '\0' : *(found - 1);
+        char after = *(found + taglen);
+        bool exact = false;
+        if ((found == body || before == ' ' || before == '(') &&
+            (after == '\0' || after == ' ' || after == ')' || after == ']')) {
+            exact = true;
+        }
+        
+        if (exact) {
+            // copy part before match into buffer
+            strncat(buffer, start, found - start);
+            // insert replacment
+            strncat(buffer, replacement, sizeof(buffer) - strlen(buffer) - 1);
+            // move pointer to after replacement
+            start = found + taglen;
+        } else {
+            //no match
+            strncat(buffer, start, (found - start) + 1);
+            start = found + 1;
+        }
+    }
+    // append body
+    strncat(buffer, start, sizeof(buffer) - strlen(buffer) - 1);
+    // override
+    strncpy(body, buffer, BUFFER_SIZE);
+}
+
+void resolveCrossReferences(char *str, int mode) {
 
     char *ptr;
-
-    // while a cross-reference exists
-    while ((ptr = strchr(body, '@')) != NULL) {
-
+    while ((ptr = strchr(str, '@')) != NULL) {
         char t[BUFFER_SIZE];
         int i = 0;
 
@@ -131,18 +164,31 @@ void resolveCrossReferences(char *body) {
             i++;
         }
         t[i] = '\0';
-
-        // Suche in der Hashmap (table) nach diesem Tag
+        
+        // search hash map for the tag
         struct hashTable *match = NULL;
         HASH_FIND_STR(table, t, match);
-
+        
         if (match) {
-            // replace the Tag in the body
-            replaceAll(body, t, match->line.args.orig);
+            if (mode == 0) {
+                if (strlen(match->line.args.orig) == 0) {
+                    replaceTagExact(str, t, match->line.prems.orig);
+                } else {
+                    replaceTagExact(str, t, match->line.args.orig);
+                }
+            } else {
+                if (strlen(match->line.args.simplified) == 0) {
+                    replaceTagExact(str, t, match->line.prems.simplified);
+                } else {
+                    replaceTagExact(str, t, match->line.args.simplified);
+                }
+            }
+            // revert search pointer
+            ptr = str;
         } else {
-            // skip
+            // no match, move pointer
             ptr++;
-        }
+        }        
     }
 }
 
@@ -169,7 +215,6 @@ void simplifyExpression(char *expr) {
     
         if (strcmp(simplifiedExpr, "null") != 0) {
             strcpy(expr, simplifiedExpr);
-            // printf("SIMPLIFIED: %s\n", expr);
         }
     }
 }
@@ -211,6 +256,7 @@ void refactor() {
         // remove special characters and extra spaces
         replaceAll(line, "\\$+", "");
         replaceAll(line, "\\?+", "");
+        replaceAll(line, "\\~+", "");
         replaceAll(line, "\\( ", "(");
         replaceAll(line, " \\)", ")");
         replaceAll(line, "  ", " ");
@@ -235,8 +281,6 @@ void refactor() {
 
             strncpy(newType.replacement, replacement, BUFFER_SIZE - 1);
             newType.replacement[BUFFER_SIZE - 1] = '\0';
-
-            // newType.arity = 0; // TODO extract arity
 
             push(&typeList, &newType, sizeof(struct type));
         }
@@ -282,44 +326,51 @@ void parse() {
         char type[BUFFER_SIZE] = {0};
         char tag[BUFFER_SIZE] = {0};
         char body[BUFFER_SIZE] = {0};
-        char resolved_body[BUFFER_SIZE] = {0};
         char rule[BUFFER_SIZE] = {0};
         char prems[BUFFER_SIZE] = {0};
+        char sprems[BUFFER_SIZE] = {0};
         char args[BUFFER_SIZE] = {0};
+        char sargs[BUFFER_SIZE] = {0};
         char note[BUFFER_SIZE] = {0};
 
         // extract components <TYPE><TAG><BODY>
         extractComponents(line, tag, type, body);
 
-        // resolve references to other proof lines
-        strcpy(resolved_body, body);
-        resolveCrossReferences(resolved_body);
+        // extract the details dependig on the type
+        extractSubcomponents(type, body, args, prems, note, rule);
+    
+        adjustBrackets(args);
+        resolveCrossReferences(args, 0);
+        removeDuplicateBrackets(args);
 
-        // extract more details depending on the type
-        if (extractSubcomponents(type, resolved_body, args, prems, note, rule) == 1) {
-            // type unknown; copy what's there
-            strcpy(note, line);
-            continue;
-        }
+        strcpy(sargs, args);
+        simplifyExpression(sargs);
+   
+        strcpy(sprems, prems);
+        resolveCrossReferences(prems, 0);
+        resolveCrossReferences(sprems, 1);
         
         cleanString(type);
         cleanString(tag);
+        cleanString(body);
         cleanString(rule);
         cleanString(prems);
+        cleanString(sprems);
         cleanString(args);
+        cleanString(sargs);
         cleanString(note);
 
         // add the new entry to the hash table
         struct hashTable *entry;
-        
         entry = (struct hashTable *) malloc(sizeof(struct hashTable));
         strcpy(entry->tag, tag);
         strcpy(entry->line.type, type);
         strcpy(entry->line.body, body);
-        strcpy(entry->line.resolved_body, resolved_body);
         strcpy(entry->line.rule, rule);
+        strcpy(entry->line.prems.simplified, sprems);
         strcpy(entry->line.prems.orig, prems);
         strcpy(entry->line.args.orig, args);
+        strcpy(entry->line.args.simplified, sargs);
         strcpy(entry->line.note, note);
         HASH_ADD_STR(table, tag, entry);
 
@@ -344,29 +395,9 @@ void simplify() {
 
     HASH_ITER(hh, table, entry, tmp) {
 
-        char sprems[BUFFER_SIZE] = {0};
-        char sargs[BUFFER_SIZE] = {0};
-
-        strcpy(sargs, entry->line.args.orig);
-        strcpy(sprems, entry->line.prems.orig);
-
-        // prepare for simplifcation
-        removeDuplicateBrackets(sargs);
-        removeDuplicateBrackets(sprems);
-
-        // simplify logical expressions
-        simplifyExpression(sargs);
-        simplifyExpression(sprems);
-
-        cleanString(sargs);
-        cleanString(sprems);
-
-        strcpy(entry->line.prems.simplified, sprems);
-        strcpy(entry->line.args.simplified, sargs);
-
          // extract the length of the LHS for later formatting
          char mainStr[4 * BUFFER_SIZE];
-         snprintf(mainStr, sizeof(mainStr), "%s %s %s", entry -> line.type, sargs, entry->line.note);
+         snprintf(mainStr, sizeof(mainStr), "%s %s %s", entry -> line.type, entry ->line.args.simplified, entry->line.note);
          int len = strlen(mainStr);
          if (len > lengthMainString) { lengthMainString = len; }
 

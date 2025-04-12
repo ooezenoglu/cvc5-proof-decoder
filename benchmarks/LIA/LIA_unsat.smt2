@@ -1,5 +1,0 @@
-(set-logic ALL_LIA)
-(assert (forall ((x Int))
-         (and (or (<= x 0) (>= x 1))
-              (or (>= x 2) (<= x 0)))))
-(check-sat)
