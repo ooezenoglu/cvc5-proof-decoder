@@ -1,5 +1,6 @@
 %{
 #include "../include/ast.h"
+#include "../include/parse_util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,23 +8,12 @@
 
 // global variable to store simplified AST
 AST *result_ast = NULL;
-
-AST* new_node(NodeType type, AST *left, AST *right, char *var);
-AST* new_func_node(char *func_name, AST *arg_list);
-bool implication(AST* node);
-bool doubleNeg(AST* node);
-bool notForall(AST* node);
-bool notExists(AST* node);
-bool deMorg(AST* node);
-AST* simplifyAST(AST *root);
-void ast_to_string(AST *node, char *buffer, size_t bufsize);
-void yyerror(const char *s);
-int yylex(void);
 %}
 
 // ast header needed before parser compilation
 %code requires {
     #include "../include/ast.h"
+    #include "../include/parse_util.h"
 }
 
 // definitions of semantics
@@ -43,13 +33,12 @@ int yylex(void);
 
 %%
 
-// start rule: if error is encountered, output error message, set result_ast to NULL, clear the error token, accept the parse.
+// start rule: if error is encountered, output error message, set result_ast to NULL, clear the error token, accept the parse
 input:
     expr { result_ast = simplifyAST($1); }
   | error { yyerror("Syntax error in input"); result_ast = NULL; yyclearin; YYACCEPT; }
 ;
 
-//
 // Atomic expressions and groupings
 // A grouping is created as NODE_GROUP to preserve explicitly existing brackets.
 expr:
@@ -108,7 +97,7 @@ AST* new_func_node(char *func_name, AST *arg_list) {
     return node;
 }
 
-/// recursively simplify an AST
+// recursively simplify an AST
 AST* simplifyAST(AST* node) {
     if (!node) return NULL;
     node->left = simplifyAST(node->left);
@@ -127,7 +116,7 @@ AST* simplifyAST(AST* node) {
     return node;
 }
 
-/* 1. A => B becomes (or (not A) B) */
+// A => B becomes (or (not A) B)
 bool implication(AST* node) {
     if (!node) return false;
     if (node->type == NODE_IMP) {
@@ -142,7 +131,7 @@ bool implication(AST* node) {
     return false;
 }
 
-/* 4. double negation: not (not X) becomes X */
+// not (not X) becomes X
 bool doubleNeg(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left && node->left->type == NODE_NOT) {
@@ -158,7 +147,7 @@ bool doubleNeg(AST* node) {
     return false;
 }
 
-/* 5. not (forall (x) X) becomes (exists (x) (not X)) */
+// not (forall (x) X) becomes (exists (x) (not X))
 bool notForall(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left && node->left->type == NODE_FORALL) {
@@ -173,7 +162,7 @@ bool notForall(AST* node) {
     return false;
 }
 
-/* 6. not (exists (x) X) becomes (forall (x) (not X)) */
+// not (exists (x) X) becomes (forall (x) (not X))
 bool notExists(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left && node->left->type == NODE_EXISTS) {
@@ -188,7 +177,7 @@ bool notExists(AST* node) {
     return false;
 }
 
-/* 7. apply De Morgan's law and transform not (A => B) */
+// apply De Morgan's law
 bool deMorg(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left) {

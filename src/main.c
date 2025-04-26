@@ -8,10 +8,6 @@ struct var *vars;
 struct args *args;
 struct hashTable *table;
 
-// declare Flex functions
-extern int yyparse(void);
-extern void yy_scan_string(const char*);
-
 void runCvc5Parser();
 void runCvc5();
 void testExpressions();

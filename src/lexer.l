@@ -21,8 +21,7 @@
 [a-zA-Z][a-zA-Z0-9_]*    { yylval.str = strdup(yytext); return VAR; }
 "-"?[0-9]+               { yylval.str = strdup(yytext); return NUMBER; }
 ("-"|"+"|"/"|"*")        { yylval.str = strdup(yytext); return VAR; }
-[0-9]+                   { yylval.str = strdup(yytext); return NUMBER; }
-[ \t\n]+                 { /* Whitespace ignorieren */ }
+[ \t\n]+                 { /* ignore whitespace */ }
 .                        { return *yytext; }
 %%
 

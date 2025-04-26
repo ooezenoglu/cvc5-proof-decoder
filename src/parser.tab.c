@@ -70,6 +70,7 @@
 #line 1 "src/parser.y"
 
 #include "../include/ast.h"
+#include "../include/parse_util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,19 +79,7 @@
 // global variable to store simplified AST
 AST *result_ast = NULL;
 
-AST* new_node(NodeType type, AST *left, AST *right, char *var);
-AST* new_func_node(char *func_name, AST *arg_list);
-bool implication(AST* node);
-bool doubleNeg(AST* node);
-bool notForall(AST* node);
-bool notExists(AST* node);
-bool deMorg(AST* node);
-AST* simplifyAST(AST *root);
-void ast_to_string(AST *node, char *buffer, size_t bufsize);
-void yyerror(const char *s);
-int yylex(void);
-
-#line 94 "src/parser.tab.c"
+#line 83 "src/parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -526,9 +515,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    48,    48,    49,    56,    57,    58,    59,    60,    61,
-      63,    64,    65,    66,    67,    69,    70,    72,    74,    79,
-      80,    85,    86
+       0,    38,    38,    39,    45,    46,    47,    48,    49,    50,
+      52,    53,    54,    55,    56,    58,    59,    61,    63,    68,
+      69,    74,    75
 };
 #endif
 
@@ -1118,133 +1107,133 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* input: expr  */
-#line 48 "src/parser.y"
+#line 38 "src/parser.y"
          { result_ast = simplifyAST((yyvsp[0].ast)); }
-#line 1124 "src/parser.tab.c"
+#line 1113 "src/parser.tab.c"
     break;
 
   case 3: /* input: error  */
-#line 49 "src/parser.y"
+#line 39 "src/parser.y"
           { yyerror("Syntax error in input"); result_ast = NULL; yyclearin; YYACCEPT; }
-#line 1130 "src/parser.tab.c"
+#line 1119 "src/parser.tab.c"
     break;
 
   case 4: /* expr: VAR  */
-#line 56 "src/parser.y"
+#line 45 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_VAR, NULL, NULL, (yyvsp[0].str)); }
-#line 1136 "src/parser.tab.c"
+#line 1125 "src/parser.tab.c"
     break;
 
   case 5: /* expr: NUMBER  */
-#line 57 "src/parser.y"
+#line 46 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_NUMBER, NULL, NULL, (yyvsp[0].str)); }
-#line 1142 "src/parser.tab.c"
+#line 1131 "src/parser.tab.c"
     break;
 
   case 6: /* expr: TRUE  */
-#line 58 "src/parser.y"
+#line 47 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_TRUE, NULL, NULL, "true"); }
-#line 1148 "src/parser.tab.c"
+#line 1137 "src/parser.tab.c"
     break;
 
   case 7: /* expr: FALSE  */
-#line 59 "src/parser.y"
+#line 48 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_FALSE, NULL, NULL, "false"); }
-#line 1154 "src/parser.tab.c"
+#line 1143 "src/parser.tab.c"
     break;
 
   case 8: /* expr: LPAREN expr RPAREN  */
-#line 60 "src/parser.y"
+#line 49 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_GROUP, (yyvsp[-1].ast), NULL, NULL); }
-#line 1160 "src/parser.tab.c"
+#line 1149 "src/parser.tab.c"
     break;
 
   case 9: /* expr: LPAREN expr_list RPAREN  */
-#line 61 "src/parser.y"
+#line 50 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_GROUP, (yyvsp[-1].ast), NULL, NULL); }
-#line 1166 "src/parser.tab.c"
+#line 1155 "src/parser.tab.c"
     break;
 
   case 10: /* expr: LPAREN NOT expr RPAREN  */
-#line 63 "src/parser.y"
+#line 52 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_NOT, (yyvsp[-1].ast), NULL, NULL); }
-#line 1172 "src/parser.tab.c"
+#line 1161 "src/parser.tab.c"
     break;
 
   case 11: /* expr: LPAREN AND expr expr RPAREN  */
-#line 64 "src/parser.y"
+#line 53 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_AND, (yyvsp[-2].ast), (yyvsp[-1].ast), NULL); }
-#line 1178 "src/parser.tab.c"
+#line 1167 "src/parser.tab.c"
     break;
 
   case 12: /* expr: LPAREN OR expr expr RPAREN  */
-#line 65 "src/parser.y"
+#line 54 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_OR, (yyvsp[-2].ast), (yyvsp[-1].ast), NULL); }
-#line 1184 "src/parser.tab.c"
+#line 1173 "src/parser.tab.c"
     break;
 
   case 13: /* expr: LPAREN IMP expr expr RPAREN  */
-#line 66 "src/parser.y"
+#line 55 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_IMP, (yyvsp[-2].ast), (yyvsp[-1].ast), NULL); }
-#line 1190 "src/parser.tab.c"
+#line 1179 "src/parser.tab.c"
     break;
 
   case 14: /* expr: LPAREN EQ expr expr RPAREN  */
-#line 67 "src/parser.y"
+#line 56 "src/parser.y"
                                                      { (yyval.ast) = new_node(NODE_EQ, (yyvsp[-2].ast), (yyvsp[-1].ast), NULL); }
-#line 1196 "src/parser.tab.c"
+#line 1185 "src/parser.tab.c"
     break;
 
   case 15: /* expr: LPAREN FORALL LPAREN VAR RPAREN expr RPAREN  */
-#line 69 "src/parser.y"
+#line 58 "src/parser.y"
                                                       { (yyval.ast) = new_node(NODE_FORALL, (yyvsp[-1].ast), NULL, (yyvsp[-3].str)); }
-#line 1202 "src/parser.tab.c"
+#line 1191 "src/parser.tab.c"
     break;
 
   case 16: /* expr: LPAREN EXISTS LPAREN VAR RPAREN expr RPAREN  */
-#line 70 "src/parser.y"
+#line 59 "src/parser.y"
                                                       { (yyval.ast) = new_node(NODE_EXISTS, (yyvsp[-1].ast), NULL, (yyvsp[-3].str)); }
-#line 1208 "src/parser.tab.c"
+#line 1197 "src/parser.tab.c"
     break;
 
   case 17: /* expr: LPAREN VAR RPAREN  */
-#line 72 "src/parser.y"
+#line 61 "src/parser.y"
                                                      { (yyval.ast) = new_func_node((yyvsp[-1].str), NULL); }
-#line 1214 "src/parser.tab.c"
+#line 1203 "src/parser.tab.c"
     break;
 
   case 18: /* expr: LPAREN VAR non_empty_arg_list RPAREN  */
-#line 74 "src/parser.y"
+#line 63 "src/parser.y"
                                                      { (yyval.ast) = new_func_node((yyvsp[-2].str), (yyvsp[-1].ast)); }
-#line 1220 "src/parser.tab.c"
+#line 1209 "src/parser.tab.c"
     break;
 
   case 19: /* non_empty_arg_list: expr  */
-#line 79 "src/parser.y"
+#line 68 "src/parser.y"
                                 { (yyval.ast) = new_node(NODE_ARG_LIST, (yyvsp[0].ast), NULL, NULL); }
-#line 1226 "src/parser.tab.c"
+#line 1215 "src/parser.tab.c"
     break;
 
   case 20: /* non_empty_arg_list: expr non_empty_arg_list  */
-#line 80 "src/parser.y"
+#line 69 "src/parser.y"
                                { (yyval.ast) = new_node(NODE_ARG_LIST, (yyvsp[-1].ast), (yyvsp[0].ast), NULL); }
-#line 1232 "src/parser.tab.c"
+#line 1221 "src/parser.tab.c"
     break;
 
   case 21: /* expr_list: expr  */
-#line 85 "src/parser.y"
+#line 74 "src/parser.y"
                                 { (yyval.ast) = (yyvsp[0].ast); }
-#line 1238 "src/parser.tab.c"
+#line 1227 "src/parser.tab.c"
     break;
 
   case 22: /* expr_list: expr expr_list  */
-#line 86 "src/parser.y"
+#line 75 "src/parser.y"
                                 { (yyval.ast) = new_node(NODE_SEQ, (yyvsp[-1].ast), (yyvsp[0].ast), NULL); }
-#line 1244 "src/parser.tab.c"
+#line 1233 "src/parser.tab.c"
     break;
 
 
-#line 1248 "src/parser.tab.c"
+#line 1237 "src/parser.tab.c"
 
       default: break;
     }
@@ -1437,7 +1426,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 89 "src/parser.y"
+#line 78 "src/parser.y"
 
 
 AST* new_node(NodeType type, AST* left, AST* right, char* var) {
@@ -1460,7 +1449,7 @@ AST* new_func_node(char *func_name, AST *arg_list) {
     return node;
 }
 
-/// recursively simplify an AST
+// recursively simplify an AST
 AST* simplifyAST(AST* node) {
     if (!node) return NULL;
     node->left = simplifyAST(node->left);
@@ -1479,7 +1468,7 @@ AST* simplifyAST(AST* node) {
     return node;
 }
 
-/* 1. A => B becomes (or (not A) B) */
+// A => B becomes (or (not A) B)
 bool implication(AST* node) {
     if (!node) return false;
     if (node->type == NODE_IMP) {
@@ -1494,7 +1483,7 @@ bool implication(AST* node) {
     return false;
 }
 
-/* 4. double negation: not (not X) becomes X */
+// not (not X) becomes X
 bool doubleNeg(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left && node->left->type == NODE_NOT) {
@@ -1510,7 +1499,7 @@ bool doubleNeg(AST* node) {
     return false;
 }
 
-/* 5. not (forall (x) X) becomes (exists (x) (not X)) */
+// not (forall (x) X) becomes (exists (x) (not X))
 bool notForall(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left && node->left->type == NODE_FORALL) {
@@ -1525,7 +1514,7 @@ bool notForall(AST* node) {
     return false;
 }
 
-/* 6. not (exists (x) X) becomes (forall (x) (not X)) */
+// not (exists (x) X) becomes (forall (x) (not X))
 bool notExists(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left && node->left->type == NODE_EXISTS) {
@@ -1540,7 +1529,7 @@ bool notExists(AST* node) {
     return false;
 }
 
-/* 7. apply De Morgan's law and transform not (A => B) */
+// apply De Morgan's law
 bool deMorg(AST* node) {
     if (!node) return false;
     if (node->type == NODE_NOT && node->left) {
