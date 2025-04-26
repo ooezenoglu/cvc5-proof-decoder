@@ -456,5 +456,5 @@ void decode() {
     formatProof();
 
     // debug
-    printHashTable();
+    // printHashTable();
 }
