@@ -35,7 +35,7 @@ SRC = $(C_SRC) $(BISON_C) $(FLEX_C)
 OBJS = $(SRC:.c=.o)
 
 # Target executable
-TARGET = cvc5-interpreter
+TARGET = cvc5-proof-decoder
 
 # Default target
 all: $(TARGET)

@@ -39,7 +39,7 @@ Verify the installation and the correct version using the commands `flex --versi
 Execute the following command in the terminal adding from the below list flags:
 
 ```
-make && ./cvc5-interpreter
+make && ./cvc5-proof-decoder
 ```
 
 | **Flag**         | **Description**                                                                            |
@@ -52,5 +52,5 @@ make && ./cvc5-interpreter
 For example, a TPTP problem can be translated into an SMT-LIB problem (by the `cvc5` parser), executed by the `cvc5` solver and finally the proof decoded with the following command:
 
 ```
-make && ./cvc5-interpreter --p --f <PATH-TPTP-PROBLEM> --c <PATH-cvc5-PARSER> --r <PATH-cvc5-SOLVER> --d
+make && ./cvc5-proof-decoder --p --f <PATH-TPTP-PROBLEM> --c <PATH-cvc5-PARSER> --r <PATH-cvc5-SOLVER> --d
 ```
